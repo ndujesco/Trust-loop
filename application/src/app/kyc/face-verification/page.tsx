@@ -80,7 +80,7 @@ const FaceVerificationPage: React.FC = () => {
   }, [state.idInformation]);
 
   const handleStartFaceVerification = () => {
-    router.push("/kyc/document-submission");
+    router.push("/kyc/face-capture");
   };
 
   const handleBack = () => {

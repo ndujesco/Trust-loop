@@ -31,6 +31,9 @@ const FaceCapturePage: React.FC = () => {
   const [shouldRehydrate, setShouldRehydrate] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>("");
 
+  const [ws, setWs] = useState<WebSocket | null>(null);
+  const [stage, setStage] = useState("calibrating");
+
   const instructions = [
     "Position your face in the camera frame",
     "Look directly at the camera",
@@ -38,23 +41,62 @@ const FaceCapturePage: React.FC = () => {
     "Keep still while we capture your photo",
   ];
 
+  // Effect to receive websocket data
   useEffect(() => {
     startCamera();
 
-    // Cycle through instructions
-    const instructionInterval = setInterval(() => {
-      setCurrentInstruction((prev) => {
-        const currentIndex = instructions.indexOf(prev);
-        const nextIndex = (currentIndex + 1) % instructions.length;
-        return instructions[nextIndex];
-      });
-    }, 3000);
+    const socket = new WebSocket(
+      `${PYTHON_BACKEND.replace("http", "ws")}/ws/liveness`
+    );
+    setWs(socket);
+
+    socket.onopen = () => console.log("✅ Connected to liveness WebSocket");
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log("📩 Liveness update:", data);
+      setStage(data.stage);
+      setCurrentInstruction(data.message);
+      if (data.stage === "done") {
+        socket.close();
+        stopCamera();
+        router.push("/kyc/document-submission");
+      }
+    };
+
+    socket.onerror = (err) => console.error("WebSocket error:", err);
+    socket.onclose = () => console.log("🔌 WebSocket closed");
 
     return () => {
-      clearInterval(instructionInterval);
       stopCamera();
+      socket.close();
     };
   }, []);
+
+  // Effect to send frames to backend
+  useEffect(() => {
+    // if (!ws || !videoRef.current) return;
+
+    const interval = setInterval(async () => {
+      if (ws!.readyState !== WebSocket.OPEN) return;
+      const canvas = document.createElement("canvas");
+      const video = videoRef.current;
+      const ctx = canvas.getContext("2d");
+      if (!ctx || !video) return;
+
+      canvas.width = 320;
+      canvas.height = 240;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const base64Frame = canvas.toDataURL("image/jpeg", 0.5);
+
+      // ✅ Backend expects JSON with key "frame"
+      if (stage !== "done") {
+        ws!.send(JSON.stringify({ frame: base64Frame }));
+      }
+    }, 200); // ~5 FPS
+
+    return () => clearInterval(interval);
+  }, [ws, videoRef]);
 
   const startCamera = async () => {
     try {
@@ -332,7 +374,11 @@ const FaceCapturePage: React.FC = () => {
         {/* Instruction */}
         <div className="text-center">
           <h1 className="text-xl font-bold text-[var(--text-primary)] mb-2">
-            {currentInstruction}
+            {stage === "calibrating" && "Please keep your head steady in the box for a moment"}
+            {stage === "shake_head" && "Please shake your head left and right"}
+            {stage === "open_mouth" && "Now open your mouth"}
+            {stage === "blink" && "Finally, blink your eyes"}
+            {stage === "done" && "Liveness confirmed ✅"}
           </h1>
           <p className="text-[var(--text-tertiary)]">
             Follow the instructions below to complete face verification
