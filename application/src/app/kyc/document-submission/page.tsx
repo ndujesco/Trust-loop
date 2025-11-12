@@ -5,14 +5,18 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import KYCLayout from "@/components/layouts/KYCLayout";
+import { Upload } from "@aws-sdk/lib-storage";
+import { s3, BUCKET, REGION } from "@/lib/s3Config";
 
 const DocumentSubmissionPage: React.FC = () => {
   const router = useRouter();
 
   const [utilityBill, setUtilityBill] = useState<File | null>(null);
   const [locationHistory, setLocationHistory] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showAlternative, setShowAlternative] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string>("");
 
   const handleUtilityBillChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -37,7 +41,7 @@ const DocumentSubmissionPage: React.FC = () => {
     setError("");
   };
 
-  const handleSubmit = () => {
+  async function handleSubmit() {
     if (!utilityBill) {
       setError("Please upload a utility bill");
       return;
@@ -46,9 +50,74 @@ const DocumentSubmissionPage: React.FC = () => {
       setError("Please upload location history or choose alternative option");
       return;
     }
-    // Submit logic will be added in next steps
-    console.log("Form is valid, ready to submit");
-  };
+
+    setLoading(true);
+    setError("");
+    setUploadProgress("Preparing uploads...");
+
+    try {
+      // ---------- Upload utility bill ----------
+      const safeBillName = utilityBill.name.replace(/\s+/g, "_");
+      const billKey = `utility-bills/${Date.now()}-${safeBillName}`;
+
+      setUploadProgress(`Uploading utility bill...`);
+
+      const billUpload = new Upload({
+        client: s3,
+        params: {
+          Bucket: BUCKET,
+          Key: billKey,
+          Body: utilityBill,
+          ContentType: utilityBill.type || "application/octet-stream",
+        },
+        queueSize: 4, // concurrency
+        partSize: 5 * 1024 * 1024,
+      });
+
+      await billUpload.done();
+
+      const billUrl = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${encodeURIComponent(
+        billKey
+      )}`;
+
+      // ---------- Upload timeline (optional) ----------
+      let timelineUrl: string | null = null;
+      if (locationHistory) {
+        const safeTimelineName = locationHistory.name.replace(/\s+/g, "_");
+        const timelineKey = `timelines/${Date.now()}-${safeTimelineName}`;
+
+        setUploadProgress("Uploading timeline...");
+
+        const timelineUpload = new Upload({
+          client: s3,
+          params: {
+            Bucket: BUCKET,
+            Key: timelineKey,
+            Body: locationHistory,
+            ContentType: locationHistory.type || "application/octet-stream",
+          },
+          queueSize: 4,
+          partSize: 5 * 1024 * 1024,
+        });
+
+        await timelineUpload.done();
+        timelineUrl = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${encodeURIComponent(
+          timelineKey
+        )}`;
+      }
+
+      // Files uploaded successfully
+      // Backend verification and save will be added in next steps
+      console.log("Files uploaded:", { billUrl, timelineUrl });
+      setUploadProgress("Upload complete");
+    } catch (err: any) {
+      console.error("Error uploading documents:", err);
+      setError(err?.message || "Failed to upload documents. Please try again.");
+    } finally {
+      setLoading(false);
+      setUploadProgress("");
+    }
+  }
 
   const handleBack = () => {
     router.push("/kyc/face-capture");
@@ -275,13 +344,28 @@ const DocumentSubmissionPage: React.FC = () => {
           </Card>
         )}
 
+        {/* Upload Progress */}
+        {uploadProgress && (
+          <Card variant="outlined" className="bg-[var(--bg-secondary)]">
+            <CardContent className="py-4">
+              <div className="flex items-center gap-3">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[var(--primary-teal)]"></div>
+                <span className="text-[var(--text-secondary)] font-medium">
+                  {uploadProgress}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Submit Button */}
         <div className="pt-4">
           <Button
             size="lg"
             onClick={handleSubmit}
-            disabled={!isFormValid}
+            disabled={!isFormValid || loading}
             className="w-full"
+            loading={loading}
           >
             Submit Documents
           </Button>
