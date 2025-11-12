@@ -1,0 +1,11 @@
+unstructured
+python-dotenv
+pydantic
+fastapi
+uvicorn
+requests
+python-multipart
+pdfplumber
+geopy
+google-cloud-documentai 
+pandas
