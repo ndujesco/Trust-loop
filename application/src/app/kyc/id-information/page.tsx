@@ -207,7 +207,7 @@ const IDInformationPage: React.FC = () => {
     <KYCLayout
       currentStep={1}
       totalSteps={8}
-      steps={["ID Info"]}
+      steps={["ID Info", "Address"]}
       onBack={handleBack}
     >
       <div className="space-y-6 animate-fade-in px-2 sm:px-6 max-w-lg mx-auto">

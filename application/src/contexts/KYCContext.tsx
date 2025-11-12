@@ -1,12 +1,6 @@
 "use client";
 
-import React, {
-  createContext,
-  useContext,
-  useReducer,
-  ReactNode,
-  useEffect,
-} from "react";
+import React, { createContext, useContext, useReducer, ReactNode } from "react";
 
 // Types for KYC data
 
@@ -20,6 +14,11 @@ export interface VerificationStatus {
   faceVerification: "pending" | "processing" | "completed" | "failed";
   addressVerification: "pending" | "processing" | "completed" | "failed";
   overallStatus: "incomplete" | "processing" | "completed" | "failed";
+}
+
+export interface AddressPartners {
+  selected: string[];
+  verified: string[];
 }
 
 export interface UserAddress {
@@ -61,6 +60,13 @@ export interface UserData {
   __v: number;
 }
 
+export interface CurrentAddress {
+  state: string;
+  lga: string;
+  area: string;
+  address: string;
+}
+
 export interface KYCState {
   // Step tracking
   currentStep: number;
@@ -68,6 +74,9 @@ export interface KYCState {
 
   // Form data
   idInformation: IDInformation | null;
+  addressPartners: AddressPartners;
+  currentAddress: CurrentAddress | null;
+  userData: UserData | null;
 
   // Verification status
   verificationStatus: VerificationStatus;
@@ -84,6 +93,8 @@ type KYCAction =
   | { type: "SET_ID_INFORMATION"; payload: IDInformation }
   | { type: "SET_USER_DATA"; payload: UserData }
   | { type: "SET_VERIFICATION_STATUS"; payload: Partial<VerificationStatus> }
+  | { type: "SET_ADDRESS_PARTNERS"; payload: AddressPartners }
+  | { type: "SET_CURRENT_ADDRESS"; payload: CurrentAddress }
   | { type: "SET_LOADING"; payload: boolean }
   | { type: "SET_ERROR"; payload: string | null }
   | { type: "RESET_KYC" };
@@ -93,6 +104,12 @@ const initialState: KYCState = {
   currentStep: 0,
   completedSteps: [],
   idInformation: null,
+  addressPartners: {
+    selected: [],
+    verified: [],
+  },
+  currentAddress: null,
+  userData: null,
   verificationStatus: {
     bvnExists: null,
     faceVerification: "pending",
@@ -123,6 +140,24 @@ function kycReducer(state: KYCState, action: KYCAction): KYCState {
         ...state,
         idInformation: action.payload,
         completedSteps: [...state.completedSteps, 1],
+      };
+
+    case "SET_ADDRESS_PARTNERS":
+      return {
+        ...state,
+        addressPartners: action.payload,
+      };
+
+    case "SET_USER_DATA":
+      return {
+        ...state,
+        userData: action.payload,
+      };
+
+    case "SET_CURRENT_ADDRESS":
+      return {
+        ...state,
+        currentAddress: action.payload,
       };
 
     case "SET_VERIFICATION_STATUS":
@@ -194,8 +229,14 @@ export function useKYCActions() {
     setIdInformation: (info: IDInformation) =>
       dispatch({ type: "SET_ID_INFORMATION", payload: info }),
 
+    setAddressPartners: (partners: AddressPartners) =>
+      dispatch({ type: "SET_ADDRESS_PARTNERS", payload: partners }),
+
     setUserData: (userData: UserData) =>
       dispatch({ type: "SET_USER_DATA", payload: userData }),
+
+    setCurrentAddress: (address: CurrentAddress) =>
+      dispatch({ type: "SET_CURRENT_ADDRESS", payload: address }),
 
     setVerificationStatus: (status: Partial<VerificationStatus>) =>
       dispatch({ type: "SET_VERIFICATION_STATUS", payload: status }),
