@@ -5,22 +5,23 @@
 /* KYC Design System Variables */
 :root {
   /* Colors */
-  --primary-teal: #10b981;
-  --primary-teal-dark: #059669;
-  --primary-teal-light: #34d399;
+  --primary-teal: #ed1c24;
+  --primary-teal-dark: #b50f16;
+  --primary-teal-light: #ff5a61;
 
-  --bg-primary: #0a0a0a;
-  --bg-secondary: #1a1a1a;
-  --bg-tertiary: #2a2a2a;
-  --bg-card: #1f2937;
+  --bg-primary: #ffffff;
+  --bg-secondary: #9a9c9f;
+  --bg-tertiary: #b4b6b8;
+  --bg-card: #d1d3d4;
 
-  --text-primary: #ffffff;
-  --text-secondary: #e5e7eb;
-  --text-tertiary: #9ca3af;
-  --text-muted: #6b7280;
+  --text-primary: #808285;
+  /* --text-primary: #ffffff; */
+  --text-secondary: #808285;
+  --text-tertiary: #000;
+  --text-muted: #000;
 
-  --border-primary: #374151;
-  --border-secondary: #4b5563;
+  --border-primary: #a5a7aa;
+  --border-secondary: #c3c5c7;
 
   --success: #10b981;
   --error: #ef4444;
