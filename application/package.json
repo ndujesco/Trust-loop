@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.929.0",
+    "@aws-sdk/lib-storage": "^3.929.0",
     "axios": "^1.12.2",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.7.0",
