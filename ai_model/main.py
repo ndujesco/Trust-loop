@@ -1,4 +1,11 @@
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, UploadFile, File
+from fastapi import (
+    FastAPI,
+    HTTPException,
+    WebSocket,
+    WebSocketDisconnect,
+    UploadFile,
+    File,
+)
 from tempfile import NamedTemporaryFile
 from fastapi.middleware.cors import CORSMiddleware
 import os
@@ -49,18 +56,20 @@ async def liveness_ws(websocket: WebSocket):
             action_completed = liveness.process_frame(frame)
 
             # Send stage update
-            await websocket.send_json({
-                "stage": liveness.stage,
-                "action_completed": action_completed
-            })
-
             if liveness.stage == LivenessStage.DONE:
-                await websocket.send_json({
-                    "stage": liveness.stage,
-                    "success": True,
-                    "message": "Liveness check passed!"
-                })
-                break
+                await websocket.send_json(
+                    {
+                        "stage": liveness.stage,
+                        "success": True,
+                        "message": "Liveness check passed!",
+                    }
+                )
+                break  # Exit the loop
+
+            # If not done, send the normal stage update
+            await websocket.send_json(
+                {"stage": liveness.stage, "action_completed": action_completed}
+            )
 
     except WebSocketDisconnect:
         print("Client disconnected")
@@ -110,7 +119,7 @@ async def liveness_test(video: UploadFile = File(...)):
             "head_shakes": liveness.head_movements,
             "mouth_opens": liveness.mouth_movements,
             "blinks": liveness.blinks,
-            "final_stage": liveness.stage
+            "final_stage": liveness.stage,
         }
 
     except Exception as e:

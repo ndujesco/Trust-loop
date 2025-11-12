@@ -2,7 +2,7 @@ unstructured
 python-dotenv
 pydantic
 fastapi
-uvicorn
+uvicorn[standard]
 requests
 python-multipart
 pdfplumber

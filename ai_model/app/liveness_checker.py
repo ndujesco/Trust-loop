@@ -77,12 +77,8 @@ class SequentialLiveness:
         elif self.stage == LivenessStage.OPEN_MOUTH:
             action_completed = self._detect_mouth(landmarks)
             if action_completed:
-                self.stage = LivenessStage.BLINK
-
-        elif self.stage == LivenessStage.BLINK:
-            action_completed = self._detect_blink(landmarks)
-            if action_completed:
                 self.stage = LivenessStage.DONE
+                
 
         return action_completed
     
