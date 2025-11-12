@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
@@ -9,9 +9,52 @@ import KYCLayout from "@/components/layouts/KYCLayout";
 const DocumentSubmissionPage: React.FC = () => {
   const router = useRouter();
 
+  const [utilityBill, setUtilityBill] = useState<File | null>(null);
+  const [locationHistory, setLocationHistory] = useState<File | null>(null);
+  const [error, setError] = useState("");
+  const [showAlternative, setShowAlternative] = useState(false);
+
+  const handleUtilityBillChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUtilityBill(file);
+      setError("");
+    }
+  };
+
+  const handleLocationHistoryChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setLocationHistory(file);
+      setError("");
+    }
+  };
+
+  const handleAlternativeClick = () => {
+    setShowAlternative(true);
+    setError("");
+  };
+
+  const handleSubmit = () => {
+    if (!utilityBill) {
+      setError("Please upload a utility bill");
+      return;
+    }
+    if (!locationHistory && !showAlternative) {
+      setError("Please upload location history or choose alternative option");
+      return;
+    }
+    // Submit logic will be added in next steps
+    console.log("Form is valid, ready to submit");
+  };
+
   const handleBack = () => {
     router.push("/kyc/face-capture");
   };
+
+  const isFormValid = utilityBill && (locationHistory || showAlternative);
 
   return (
     <KYCLayout
@@ -47,8 +90,8 @@ const DocumentSubmissionPage: React.FC = () => {
                 type="file"
                 id="utility-bill"
                 accept=".pdf,.jpg,.jpeg,.png"
+                onChange={handleUtilityBillChange}
                 className="hidden"
-                disabled
               />
               <label
                 htmlFor="utility-bill"
@@ -69,7 +112,9 @@ const DocumentSubmissionPage: React.FC = () => {
                 </svg>
                 <div>
                   <p className="text-[var(--text-secondary)] font-medium">
-                    Click to upload utility bill
+                    {utilityBill
+                      ? utilityBill.name
+                      : "Click to upload utility bill"}
                   </p>
                   <p className="text-[var(--text-tertiary)] text-xs">
                     PDF, JPG, PNG up to 10MB
@@ -149,8 +194,8 @@ const DocumentSubmissionPage: React.FC = () => {
                 type="file"
                 id="location-history"
                 accept=".json"
+                onChange={handleLocationHistoryChange}
                 className="hidden"
-                disabled
               />
               <label
                 htmlFor="location-history"
@@ -171,7 +216,9 @@ const DocumentSubmissionPage: React.FC = () => {
                 </svg>
                 <div>
                   <p className="text-[var(--text-secondary)] font-medium">
-                    Click to upload location history
+                    {locationHistory
+                      ? locationHistory.name
+                      : "Click to upload location history"}
                   </p>
                   <p className="text-[var(--text-tertiary)] text-xs">
                     JSON format up to 50MB
@@ -181,20 +228,61 @@ const DocumentSubmissionPage: React.FC = () => {
             </div>
 
             {/* Alternative Option */}
-            <div className="text-center">
-              <button
-                className="text-[var(--primary-teal)] text-sm hover:text-[var(--primary-teal-light)] transition-colors"
-                disabled
-              >
-                Can't export this data for some reason?
-              </button>
-            </div>
+            {!showAlternative && (
+              <div className="text-center">
+                <button
+                  onClick={handleAlternativeClick}
+                  className="text-[var(--primary-teal)] text-sm hover:text-[var(--primary-teal-light)] transition-colors"
+                >
+                  Can't export this data for some reason?
+                </button>
+              </div>
+            )}
+
+            {showAlternative && (
+              <Card variant="outlined" className="bg-[var(--bg-secondary)]">
+                <CardContent className="py-4">
+                  <p className="text-[var(--text-secondary)] text-sm text-center">
+                    Alternative: You can proceed with just the utility bill.
+                    This may take longer to verify.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </CardContent>
         </Card>
 
+        {/* Error Message */}
+        {error && (
+          <Card
+            variant="outlined"
+            className="border-[var(--error)] bg-[var(--error-light)]"
+          >
+            <CardContent className="flex items-center gap-3 py-4">
+              <svg
+                className="w-5 h-5 text-[var(--error)] flex-shrink-0"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <span className="text-[var(--error)] font-medium">{error}</span>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Submit Button */}
         <div className="pt-4">
-          <Button size="lg" className="w-full" disabled>
+          <Button
+            size="lg"
+            onClick={handleSubmit}
+            disabled={!isFormValid}
+            className="w-full"
+          >
             Submit Documents
           </Button>
         </div>
