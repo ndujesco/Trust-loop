@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { KYCProvider } from "@/contexts/KYCContext";
+import { UtilityLocationProvider } from "@/contexts/UtilityContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,7 +30,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <KYCProvider>
-          {children}
+          <UtilityLocationProvider>{children}</UtilityLocationProvider>
         </KYCProvider>
       </body>
     </html>
