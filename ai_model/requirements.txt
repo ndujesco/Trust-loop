@@ -9,3 +9,7 @@ pdfplumber
 geopy
 google-cloud-documentai 
 pandas
+boto3
+opencv-python
+mediapipe 
+numpy
