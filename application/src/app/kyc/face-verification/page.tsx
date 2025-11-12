@@ -80,7 +80,7 @@ const FaceVerificationPage: React.FC = () => {
   }, [state.idInformation]);
 
   const handleStartFaceVerification = () => {
-    // TODO: Implement face verification
+    router.push("/kyc/document-submission");
   };
 
   const handleBack = () => {
@@ -112,11 +112,7 @@ const FaceVerificationPage: React.FC = () => {
       <KYCLayout
         currentStep={3}
         totalSteps={8}
-        steps={[
-          "ID Info",
-          "Address Verification",
-          "Face Verification",
-        ]}
+        steps={["ID Info", "Address Verification", "Face Verification"]}
         onBack={handleBack}
       >
         <div className="space-y-6 animate-fade-in">
