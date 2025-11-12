@@ -157,6 +157,52 @@ const IDInformationPage: React.FC = () => {
     router.push("/kyc");
   };
 
+  const handleContinue = async () => {
+    if (!isFormValid) return;
+
+    setIsValidating(true);
+    setError("");
+
+    try {
+      // Call /api/user endpoint with BVN and NIN
+      const response = await fetch("/api/user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          bvn: idValues.bvn,
+          nin: idValues.nin,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "BVN and NIN do not match");
+      }
+
+      const data = await response.json();
+
+      // Save user data to KYC context
+      setUserData(data.user);
+
+      // Navigate to residential address page
+      router.push("/kyc/residential-address");
+    } catch (err) {
+      console.error("Error validating BVN and NIN:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "BVN and NIN do not match. Please check and try again."
+      );
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const isFormValid =
+    bvnValidated && ninValidated && !isValidating && !bvnError && !ninError;
+
   return (
     <KYCLayout
       currentStep={1}
@@ -389,8 +435,16 @@ const IDInformationPage: React.FC = () => {
         )}
 
         {/* Continue Button */}
-        <div className="pt-4 flex items-center justify-center">
-          <Button size="lg">Continue</Button>
+        <div className="pt-4">
+          <Button
+            size="lg"
+            onClick={handleContinue}
+            disabled={!isFormValid}
+            className="w-full"
+            loading={isValidating}
+          >
+            Continue
+          </Button>
         </div>
 
         {/* Security Note */}
