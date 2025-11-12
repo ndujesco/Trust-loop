@@ -8,31 +8,9 @@ import KYCLayout from "@/components/layouts/KYCLayout";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useKYC, useKYCActions } from "@/contexts/KYCContext";
 
-import {
-  S3Client,
-} from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import axios from "axios";
-
-
-const REGION = process.env.NEXT_PUBLIC_S3_REGION!;
-const BUCKET = process.env.NEXT_PUBLIC_S3_BUCKET_NAME!;
-const ACCESS_KEY = process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID!;
-const SECRET_KEY = process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY!;
-const PYTHON_BACKEND = process.env.NEXT_PUBLIC_PYTHON_BACKEND_URL!;
-
-process.env.AWS_S3_DISABLE_CHECKSUM_VALIDATION = "true";
-
-
-const s3 = new S3Client({
-  region: REGION,
-  credentials: {
-    accessKeyId: ACCESS_KEY,
-    secretAccessKey: SECRET_KEY,
-  },
-  requestChecksumCalculation: "WHEN_REQUIRED",
-  responseChecksumValidation: "WHEN_REQUIRED"
-});
+import { s3, BUCKET, PYTHON_BACKEND, REGION } from "@/lib/s3Config";
 
 const FaceCapturePage: React.FC = () => {
   const router = useRouter();
@@ -52,7 +30,6 @@ const FaceCapturePage: React.FC = () => {
   );
   const [shouldRehydrate, setShouldRehydrate] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>("");
-
 
   const instructions = [
     "Position your face in the camera frame",
@@ -194,14 +171,19 @@ const FaceCapturePage: React.FC = () => {
 
       await upload.done();
 
-      const photoUrl = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${encodeURIComponent(s3Key)}`;
+      const photoUrl = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${encodeURIComponent(
+        s3Key
+      )}`;
 
       // ---------- Verify with Python backend ----------
       setUploadProgress("Verifying liveness...");
 
-      const pythonResp = await axios.post(`${PYTHON_BACKEND}/api/liveness-check`, {
-        photo_url: photoUrl,
-      });
+      const pythonResp = await axios.post(
+        `${PYTHON_BACKEND}/api/liveness-check`,
+        {
+          photo_url: photoUrl,
+        }
+      );
 
       const verification = pythonResp.data;
       if (!verification || verification.status !== "success") {
@@ -241,17 +223,16 @@ const FaceCapturePage: React.FC = () => {
       } else {
         router.push("/kyc/document-submission");
       }
-
     } catch (err: any) {
       console.error("Error capturing photo:", err);
-      setError(err.message || "Failed to complete liveness check. Please try again.");
+      setError(
+        err.message || "Failed to complete liveness check. Please try again."
+      );
     } finally {
       setIsCapturing(false);
       setUploadProgress("");
     }
   };
-
-
 
   const handleBack = () => {
     router.push("/kyc/face-verification");
@@ -277,8 +258,8 @@ const FaceCapturePage: React.FC = () => {
     return (
       <KYCLayout
         currentStep={4}
-        totalSteps={6}
-        steps={["ID Info", "Address", "Face", "Capture", "Documents", "Video"]}
+        totalSteps={8}
+        steps={["ID Info", "Address", "Face", "Capture"]}
         onBack={handleBack}
         onHelp={handleHelp}
       >
@@ -465,7 +446,6 @@ const FaceCapturePage: React.FC = () => {
             </>
           )}
         </div>
-
 
         {/* Tips */}
         <Card variant="outlined">
