@@ -1,6 +1,6 @@
 import React from "react";
 import { cn } from "@/lib/utils";
-import { StepProgress } from "@/ui/ProgressBar";
+import { StepProgress } from "@/components/ui/ProgressBar";
 
 export interface KYCLayoutProps {
   children: React.ReactNode;
@@ -25,7 +25,10 @@ const KYCLayout: React.FC<KYCLayoutProps> = ({
 }) => {
   return (
     <div
-      className={cn("min-h-screen bg-[var(--bg-primary)] flex flex-col", className)}
+      className={cn(
+        "min-h-screen bg-[var(--bg-primary)] flex flex-col",
+        className
+      )}
     >
       {/* Header */}
       <header className="flex items-center justify-between p-4 border-b border-[var(--border-primary)]">
@@ -86,4 +89,3 @@ const KYCLayout: React.FC<KYCLayoutProps> = ({
 };
 
 export default KYCLayout;
-

@@ -2,8 +2,8 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/ui/Button";
-import { Card, CardContent } from "@/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent } from "@/components/ui/Card";
 import KYCLayout from "@/components/layouts/KYCLayout";
 import RegulatoryFooter from "@/components/RegulatoryFooter";
 
@@ -53,8 +53,7 @@ const KYCLandingPage: React.FC = () => {
               Start KYC Verification
             </h1>
             <p className="text-lg text-[var(--text-tertiary)] max-w-sm mx-auto leading-relaxed">
-              Complete your identity verification to upgrade to Tier 3 and have
-              access to more banking services.
+              Complete your identity verification to upgrade to Tier 3 and have access to more banking services.
             </p>
           </div>
         </div>

@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TrustLoop KYC Verification System",
+  title: "KYC Verification System",
   description: "Fast-track KYC verification for banking services",
 };
 
