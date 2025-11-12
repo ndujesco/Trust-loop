@@ -67,6 +67,23 @@ export interface CurrentAddress {
   address: string;
 }
 
+export interface CapturedImage {
+  dataUrl: string;
+  timestamp: Date;
+}
+
+export interface PersonalDetails {
+  firstName: string;
+  middleName: string;
+  lastName: string;
+  dateOfBirth: string;
+  email: string;
+  phoneNumber: string;
+  residentialAddress: string;
+  state: string;
+  lga: string;
+}
+
 export interface KYCState {
   // Step tracking
   currentStep: number;
@@ -77,6 +94,8 @@ export interface KYCState {
   addressPartners: AddressPartners;
   currentAddress: CurrentAddress | null;
   userData: UserData | null;
+  personalDetails: Partial<PersonalDetails>;
+  capturedImage: CapturedImage | null;
 
   // Verification status
   verificationStatus: VerificationStatus;
@@ -93,6 +112,9 @@ type KYCAction =
   | { type: "SET_ID_INFORMATION"; payload: IDInformation }
   | { type: "SET_USER_DATA"; payload: UserData }
   | { type: "SET_VERIFICATION_STATUS"; payload: Partial<VerificationStatus> }
+  | { type: "SET_PERSONAL_DETAILS"; payload: Partial<PersonalDetails> }
+  | { type: "UPDATE_PERSONAL_DETAILS"; payload: Partial<PersonalDetails> }
+  | { type: "SET_CAPTURED_IMAGE"; payload: CapturedImage }
   | { type: "SET_ADDRESS_PARTNERS"; payload: AddressPartners }
   | { type: "SET_CURRENT_ADDRESS"; payload: CurrentAddress }
   | { type: "SET_LOADING"; payload: boolean }
@@ -104,6 +126,8 @@ const initialState: KYCState = {
   currentStep: 0,
   completedSteps: [],
   idInformation: null,
+  personalDetails: {},
+  capturedImage: null,
   addressPartners: {
     selected: [],
     verified: [],
@@ -146,6 +170,27 @@ function kycReducer(state: KYCState, action: KYCAction): KYCState {
       return {
         ...state,
         addressPartners: action.payload,
+      };
+
+    case "SET_PERSONAL_DETAILS":
+      return {
+        ...state,
+        personalDetails: action.payload,
+      };
+
+    case "UPDATE_PERSONAL_DETAILS":
+      return {
+        ...state,
+        personalDetails: {
+          ...state.personalDetails,
+          ...action.payload,
+        },
+      };
+
+    case "SET_CAPTURED_IMAGE":
+      return {
+        ...state,
+        capturedImage: action.payload,
       };
 
     case "SET_USER_DATA":
@@ -228,6 +273,15 @@ export function useKYCActions() {
 
     setIdInformation: (info: IDInformation) =>
       dispatch({ type: "SET_ID_INFORMATION", payload: info }),
+
+    setPersonalDetails: (details: Partial<PersonalDetails>) =>
+      dispatch({ type: "SET_PERSONAL_DETAILS", payload: details }),
+
+    updatePersonalDetails: (details: Partial<PersonalDetails>) =>
+      dispatch({ type: "UPDATE_PERSONAL_DETAILS", payload: details }),
+
+    setCapturedImage: (image: CapturedImage) =>
+      dispatch({ type: "SET_CAPTURED_IMAGE", payload: image }),
 
     setAddressPartners: (partners: AddressPartners) =>
       dispatch({ type: "SET_ADDRESS_PARTNERS", payload: partners }),
