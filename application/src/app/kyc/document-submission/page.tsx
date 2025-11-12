@@ -5,11 +5,15 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import KYCLayout from "@/components/layouts/KYCLayout";
+import { useKYC, useKYCActions } from "@/contexts/KYCContext";
 import { Upload } from "@aws-sdk/lib-storage";
-import { s3, BUCKET, REGION } from "@/lib/s3Config";
+import axios from "axios";
+import { s3, BUCKET, PYTHON_BACKEND, REGION } from "@/lib/s3Config";
 
 const DocumentSubmissionPage: React.FC = () => {
   const router = useRouter();
+  const { state } = useKYC();
+  const { setUserData } = useKYCActions();
 
   const [utilityBill, setUtilityBill] = useState<File | null>(null);
   const [locationHistory, setLocationHistory] = useState<File | null>(null);
@@ -17,6 +21,8 @@ const DocumentSubmissionPage: React.FC = () => {
   const [error, setError] = useState("");
   const [showAlternative, setShowAlternative] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>("");
+  const [showConfidenceModal, setShowConfidenceModal] = useState(false);
+  const [confidenceScore, setConfidenceScore] = useState<number>(0);
 
   const handleUtilityBillChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -39,6 +45,11 @@ const DocumentSubmissionPage: React.FC = () => {
   const handleAlternativeClick = () => {
     setShowAlternative(true);
     setError("");
+  };
+
+  const handleConfidenceModalTryInstead = () => {
+    setShowConfidenceModal(false);
+    router.push("/kyc/fallback-verification");
   };
 
   async function handleSubmit() {
@@ -106,10 +117,65 @@ const DocumentSubmissionPage: React.FC = () => {
         )}`;
       }
 
-      // Files uploaded successfully
-      // Backend verification and save will be added in next steps
-      console.log("Files uploaded:", { billUrl, timelineUrl });
-      setUploadProgress("Upload complete");
+      // ---------- Call Python verification endpoint (JSON) ----------
+      setUploadProgress("Verifying address with AI...");
+
+      const userId = state.userData?._id || "";
+
+      const pythonResp = await axios.post(
+        `${PYTHON_BACKEND}/api/proof-of-address`,
+        {
+          bill_url: billUrl,
+          timeline_url: timelineUrl,
+          user_id: userId,
+        },
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      const verificationData = pythonResp.data;
+      if (!verificationData) {
+        throw new Error("Failed to verify address with backend");
+      }
+
+      const confidenceScore = verificationData.confidence_score ?? 0;
+      if (confidenceScore < 0.8) {
+        setConfidenceScore(confidenceScore);
+        setShowConfidenceModal(true);
+        setLoading(false);
+        setUploadProgress("");
+        return;
+      }
+
+      // ---------- Save verification data to backend ----------
+      setUploadProgress("Saving verification data...");
+
+      const payload = {
+        userId,
+        confidenceScore,
+        googlePlaceId: verificationData.utility_address.place_id,
+        lng: verificationData.utility_address.lng,
+        lat: verificationData.utility_address.lat,
+        formattedAddress: verificationData.utility_address.formatted_address,
+        billUrl,
+      };
+
+      const saveResp = await fetch("/api/user/address/verify/google-timeline", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!saveResp.ok) {
+        throw new Error("Failed to save verification data");
+      }
+
+      const saveData = await saveResp.json();
+      if (saveData.user) {
+        setUserData(saveData.user);
+        router.push("/kyc/video-verification");
+      } else {
+        setError("Failed to save verification data. Please try again.");
+      }
     } catch (err: any) {
       console.error("Error uploading documents:", err);
       setError(err?.message || "Failed to upload documents. Please try again.");
@@ -370,6 +436,74 @@ const DocumentSubmissionPage: React.FC = () => {
             Submit Documents
           </Button>
         </div>
+
+        {/* Confidence Score Modal */}
+        {showConfidenceModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <Card className="w-full max-w-md">
+              <CardContent className="p-6 space-y-4">
+                <div className="text-center space-y-3">
+                  <div className="w-12 h-12 mx-auto bg-[var(--error-light)] rounded-full flex items-center justify-center">
+                    <svg
+                      className="w-6 h-6 text-[var(--error)]"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-[var(--text-primary)]">
+                    Address Verification Failed
+                  </h3>
+                  <p className="text-[var(--text-secondary)] text-sm">
+                    We couldn't automatically verify your address from the
+                    documents provided. The confidence score was{" "}
+                    {(confidenceScore * 100).toFixed(0)}%, which is below our
+                    verification threshold.
+                  </p>
+                </div>
+
+                <div className="bg-[var(--bg-secondary)] rounded-lg p-4">
+                  <p className="text-[var(--text-primary)] text-sm font-medium mb-2">
+                    What this means:
+                  </p>
+                  <ul className="text-[var(--text-secondary)] text-sm space-y-1">
+                    <li>
+                      • The utility bill address doesn't match your location
+                      history
+                    </li>
+                    <li>
+                      • We need additional verification to confirm your address
+                    </li>
+                    <li>• This is common and nothing to worry about</li>
+                  </ul>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowConfidenceModal(false)}
+                    className="flex-1"
+                  >
+                    Try Again
+                  </Button>
+                  <Button
+                    onClick={handleConfidenceModalTryInstead}
+                    className="flex-1"
+                  >
+                    Try This Instead
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </KYCLayout>
   );
