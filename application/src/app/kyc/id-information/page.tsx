@@ -66,6 +66,9 @@ const IDInformationPage: React.FC = () => {
     setIsValidating(true);
 
     try {
+      let currentBvnValidated = bvnValidated;
+      let currentNinValidated = ninValidated;
+
       if (type === "bvn") {
         // Call actual BVN verification API
         const response = await fetch("/api/mock/verification/bvn", {
@@ -81,11 +84,13 @@ const IDInformationPage: React.FC = () => {
           setBvnExists(true);
           setBvnValidated(true);
           setBvnError("");
+          currentBvnValidated = true;
           console.log("BVN found:", data.data);
         } else if (response.status === 404) {
           setBvnExists(false);
           setBvnValidated(false);
           setBvnError("Incorrect BVN. Please check and try again.");
+          currentBvnValidated = false;
         } else {
           throw new Error("BVN verification failed");
         }
@@ -104,11 +109,13 @@ const IDInformationPage: React.FC = () => {
           setNinExists(true);
           setNinValidated(true);
           setNinError("");
+          currentNinValidated = true;
           console.log("NIN found:", data.data);
         } else if (response.status === 404) {
           setNinExists(false);
           setNinValidated(false);
           setNinError("Incorrect NIN. Please check and try again.");
+          currentNinValidated = false;
         } else {
           throw new Error("NIN verification failed");
         }
@@ -116,8 +123,8 @@ const IDInformationPage: React.FC = () => {
 
       // Check if both IDs are validated
       const bothValidated =
-        (type === "bvn" ? true : bvnValidated) &&
-        (type === "nin" ? true : ninValidated);
+        (type === "bvn" ? currentBvnValidated : bvnValidated) &&
+        (type === "nin" ? currentNinValidated : ninValidated);
 
       if (bothValidated) {
         setIsComplete(true);
@@ -126,7 +133,7 @@ const IDInformationPage: React.FC = () => {
           bvn: type === "bvn" ? cleanValue : idValues.bvn,
           nin: type === "nin" ? cleanValue : idValues.nin,
         });
-      } else if (type === "bvn" && !ninValidated) {
+      } else if (type === "bvn" && currentBvnValidated && !ninValidated) {
         // Auto-switch to NIN tab after BVN is validated
         setTimeout(() => setActiveTab("nin"), 500);
       }
