@@ -81,6 +81,8 @@ const VideoVerificationPage: React.FC = () => {
     ? `${state.currentAddress.address}, ${state.currentAddress.area}, ${state.currentAddress.lga}, ${state.currentAddress.state}`
     : state.userData?.address?.raw || state.userData?.address?.fromBvn || "";
 
+    console.log(userAddress);
+    
   // Initialize Google Maps with Street View
   useEffect(() => {
     const createStreetView = (lat: number, lng: number) => {
