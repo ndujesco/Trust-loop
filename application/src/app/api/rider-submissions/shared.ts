@@ -32,12 +32,13 @@ export const SUBMISSIONS: Submission[] = []; // in-memory mock store (dev only)
 /**
  * Helper: simple id generator (no external deps)
  */
-export const makeId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+export const makeId = () =>
+  `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 const WS_HTTP_URL =
   process.env.WS_HTTP_URL ||
   process.env.NEXT_PUBLIC_WS_HTTP_URL ||
-  "http://trustloop-websocket-0q27xj-c90237-178-128-8-109.traefik.me";
+  "https://ws.alfredemmanuel.com";
 
 const BROADCAST_ENDPOINT = WS_HTTP_URL.endsWith("/broadcast")
   ? WS_HTTP_URL
@@ -114,4 +115,3 @@ export function updateSubmissionStatus({
     payload,
   };
 }
-

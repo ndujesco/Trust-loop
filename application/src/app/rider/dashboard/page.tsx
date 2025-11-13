@@ -23,7 +23,7 @@ type Submission = {
 };
 
 const WS_URL = (process.env.NEXT_PUBLIC_WS_URL ||
-  "ws://trustloop-websocket-0q27xj-c90237-178-128-8-109.traefik.me") as string; 
+  "wss://ws.alfredemmanuel.com/") as string; 
 
 export default function RiderDashboardPage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
