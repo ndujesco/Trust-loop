@@ -742,9 +742,17 @@ const VideoVerificationPage: React.FC = () => {
         setUserGpsLocation({ lat: userLat, lng: userLng });
 
         // Calculate distance using Haversine formula
-        // Compare user's GPS with the utility location (the original address coordinates)
-        const verifiedLat = location?.lat || 0;
-        const verifiedLng = location?.long || 0;
+        // Compare user's GPS with the selected location on Street View (not the utility location)
+        if (!selectedLocation) {
+          setError(
+            "No location selected. Please select a location on the map first."
+          );
+          setCheckingLocation(false);
+          return;
+        }
+
+        const verifiedLat = selectedLocation.lat;
+        const verifiedLng = selectedLocation.lng;
 
         const distance = calculateDistance(
           userLat,
@@ -770,9 +778,13 @@ const VideoVerificationPage: React.FC = () => {
 
         console.log("Location verification debug:", {
           userLocation: { lat: userLat, lng: userLng },
-          utilityLocation: { lat: verifiedLat, lng: verifiedLng },
+          selectedLocation: { lat: verifiedLat, lng: verifiedLng },
+          utilityLocation: {
+            lat: location?.lat || 0,
+            lng: location?.long || 0,
+          },
           distance: `${distance} meters`,
-          comparison: "User GPS vs Utility Address Location",
+          comparison: "User GPS vs Selected Street View Location",
           debug: {
             selfDistance: `${selfDistance} meters (should be 0)`,
             selectedSelfDistance: `${selectedDistance} meters (should be 0)`,
@@ -787,15 +799,13 @@ const VideoVerificationPage: React.FC = () => {
         });
 
         console.log(
-          `Distance from utility address location: ${distance.toFixed(
-            0
-          )} meters`
+          `Distance from selected location: ${distance.toFixed(0)} meters`
         );
 
         // Additional debugging for coordinate comparison
         console.log("Raw coordinate comparison:", {
           userGPS: { lat: userLat, lng: userLng },
-          utilityLocation: { lat: verifiedLat, lng: verifiedLng },
+          selectedLocation: { lat: verifiedLat, lng: verifiedLng },
           latDifference: Math.abs(userLat - verifiedLat),
           lngDifference: Math.abs(userLng - verifiedLng),
           latDifferenceDegrees: Math.abs(userLat - verifiedLat) * 111000, // Rough meters per degree
@@ -1030,9 +1040,9 @@ const VideoVerificationPage: React.FC = () => {
         throw new Error("Failed to submit video");
       }
 
-     const saveData = await response.json();
-     setUserData(saveData.user);
-     console.log("Video submitted successfully:", saveData);
+      const saveData = await response.json();
+      setUserData(saveData.user);
+      console.log("Video submitted successfully:", saveData);
 
       // Navigate to success page
       router.push("/kyc/success");
@@ -1077,12 +1087,12 @@ const VideoVerificationPage: React.FC = () => {
           /* Map Selection Step */
           <>
             {/* Instructions */}
-            <Card variant="outlined" className="bg-[var(--bg-secondary)]">
+            <Card variant="outlined" className="bg-[var(--bg-primary)]">
               <CardContent className="py-4">
                 <h4 className="font-medium text-[var(--text-primary)] mb-2">
                   Instructions:
                 </h4>
-                <p className="text-[var(--text-secondary)] text-sm">
+                <p className="text-[var(--text-primary)] text-sm">
                   Street View is showing your verified address. Drag to look
                   around 360°, use the arrows on the street to navigate, and
                   adjust the view to see the front of your house clearly.
@@ -1219,11 +1229,11 @@ const VideoVerificationPage: React.FC = () => {
                 <h4 className="font-medium text-[var(--text-primary)] mb-2">
                   Instructions:
                 </h4>
-                <p className="text-[var(--text-secondary)] text-sm">
+                <p className="text-[var(--text-primary)] text-sm">
                   Go outside to the front of your house and record a 30-second
                   video showing:
                 </p>
-                <ul className="mt-3 space-y-1 text-sm text-[var(--text-tertiary)]">
+                <ul className="mt-3 space-y-1 text-sm text-[var(--text-primary)]">
                   <li>• The front of your house clearly</li>
                   <li>• Surrounding area for context</li>
                   <li>• Ensure good lighting and clear visibility</li>
@@ -1289,16 +1299,17 @@ const VideoVerificationPage: React.FC = () => {
                     variant={isRecording ? "secondary" : "primary"}
                     size="lg"
                     disabled={!cameraInitialized}
-                    className={`px-8 ${isRecording
+                    className={`px-8 ${
+                      isRecording
                         ? "bg-red-500 hover:bg-red-600 text-white"
                         : ""
-                      }`}
+                    }`}
                   >
                     {!cameraInitialized
                       ? "Initializing Camera..."
                       : isRecording
-                        ? "Stop Recording"
-                        : "Start Recording"}
+                      ? "Stop Recording"
+                      : "Start Recording"}
                   </Button>
                 ) : (
                   <div className="text-center space-y-3">
@@ -1453,8 +1464,9 @@ const VideoVerificationPage: React.FC = () => {
                   <div className="space-y-4">
                     {/* Check distance and show appropriate message */}
                     {(() => {
-                      const verifiedLat = location?.lat || 0;
-                      const verifiedLng = location?.long || 0;
+                      if (!selectedLocation) return null;
+                      const verifiedLat = selectedLocation.lat;
+                      const verifiedLng = selectedLocation.lng;
                       const distance = calculateDistance(
                         userGpsLocation.lat,
                         userGpsLocation.lng,
@@ -1462,7 +1474,7 @@ const VideoVerificationPage: React.FC = () => {
                         verifiedLng
                       );
 
-                      if (distance <= 10000) {
+                      if (distance <= 500) {
                         return (
                           <div className="flex items-center gap-3 p-3 bg-[var(--success)]/10 border border-[var(--success)] rounded-lg">
                             <svg
@@ -1508,12 +1520,12 @@ const VideoVerificationPage: React.FC = () => {
                                 </span>
                                 <p className="text-xs text-[var(--text-tertiary)] mt-1">
                                   You're {distance.toFixed(0)}m away from the
-                                  verified address (threshold: 10km)
+                                  selected location
                                 </p>
                               </div>
                             </div>
 
-                            <div className="bg-[var(--bg-secondary)] rounded-lg p-4 space-y-3">
+                            <div className="bg-[var(--bg-primary)] rounded-lg p-4 space-y-3">
                               <p className="text-[var(--text-primary)] text-sm font-medium">
                                 You have two options to proceed:
                               </p>
@@ -1562,9 +1574,13 @@ const VideoVerificationPage: React.FC = () => {
                     }
 
                     // Check if user is far from location to show two options
-                    if (locationVerified && userGpsLocation) {
-                      const verifiedLat = location?.lat || 0;
-                      const verifiedLng = location?.long || 0;
+                    if (
+                      locationVerified &&
+                      userGpsLocation &&
+                      selectedLocation
+                    ) {
+                      const verifiedLat = selectedLocation.lat;
+                      const verifiedLng = selectedLocation.lng;
                       const distance = calculateDistance(
                         userGpsLocation.lat,
                         userGpsLocation.lng,
@@ -1572,7 +1588,7 @@ const VideoVerificationPage: React.FC = () => {
                         verifiedLng
                       );
 
-                      if (distance > 10000) {
+                      if (distance > 500) {
                         return (
                           <div className="space-y-3">
                             <Button
@@ -1812,10 +1828,11 @@ const VideoVerificationPage: React.FC = () => {
                             <button
                               key={index}
                               onClick={() => setCurrentImageIndex(index)}
-                              className={`w-2 h-2 rounded-full transition-all ${index === currentImageIndex
+                              className={`w-2 h-2 rounded-full transition-all ${
+                                index === currentImageIndex
                                   ? "bg-[var(--primary-teal)]"
                                   : "bg-[var(--border-primary)] hover:bg-[var(--text-tertiary)]"
-                                }`}
+                              }`}
                             />
                           ))}
                         </div>

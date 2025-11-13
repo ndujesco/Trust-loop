@@ -281,12 +281,12 @@ const DocumentSubmissionPage: React.FC = () => {
 
             {/* Instructions */}
             <div className="bg-[var(--bg-secondary)] rounded-lg p-4 space-y-3">
-              <h4 className="font-medium text-[var(--text-primary)]">
+              <h4 className="font-medium text-[var(--text-tertiary)]">
                 How to export:
               </h4>
               <div className="space-y-2 text-sm">
                 <div>
-                  <p className="font-medium text-[var(--text-secondary)]">
+                  <p className="font-medium text-[var(--text-tertiary)]">
                     Android:
                   </p>
                   <p className="text-[var(--text-tertiary)]">
@@ -295,7 +295,7 @@ const DocumentSubmissionPage: React.FC = () => {
                   </p>
                 </div>
                 <div>
-                  <p className="font-medium text-[var(--text-secondary)]">
+                  <p className="font-medium text-[var(--text-tertiary)]">
                     iOS:
                   </p>
                   <p className="text-[var(--text-tertiary)]">
@@ -421,7 +421,7 @@ const DocumentSubmissionPage: React.FC = () => {
 
         {/* Upload Progress */}
         {uploadProgress && (
-          <Card variant="outlined" className="bg-[var(--bg-secondary)]">
+          <Card variant="outlined" className="bg-[var(--bg-primary)]">
             <CardContent className="py-4">
               <div className="flex items-center gap-3">
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[var(--primary-teal)]"></div>

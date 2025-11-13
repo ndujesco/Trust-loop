@@ -1,8 +1,25 @@
 "use client";
 
-import React, { createContext, useContext, useReducer, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useReducer,
+  ReactNode,
+  useEffect,
+} from "react";
 
 // Types for KYC data
+export interface PersonalDetails {
+  firstName: string;
+  middleName: string;
+  lastName: string;
+  dateOfBirth: string;
+  email: string;
+  phoneNumber: string;
+  residentialAddress: string;
+  state: string;
+  lga: string;
+}
 
 export interface IDInformation {
   bvn?: string;
@@ -16,6 +33,11 @@ export interface VerificationStatus {
   overallStatus: "incomplete" | "processing" | "completed" | "failed";
 }
 
+export interface CapturedImage {
+  dataUrl: string;
+  timestamp: Date;
+}
+
 export interface AddressPartners {
   selected: string[];
   verified: string[];
@@ -26,6 +48,7 @@ export interface UserAddress {
   fromBvn: string;
   fromUtility: string | null;
   raw: string | null;
+
   googlePlaceId: string | null;
   landmarks: string[];
   movedInAt: string | null;
@@ -42,12 +65,11 @@ export interface UserData {
   firstName: string;
   middleName: string;
   lastName: string;
-  email: string;
-  verificationId: string;
   bvn: string;
   nin: string;
   ninImage: string;
   bvnImage: string;
+  verificationId: string;
   liveUrls: string[];
   phones: UserPhone[];
   address: UserAddress;
@@ -95,23 +117,6 @@ export interface PepStatus {
   relatedPepDetails: RelatedPepDetails | null;
 }
 
-export interface CapturedImage {
-  dataUrl: string;
-  timestamp: Date;
-}
-
-export interface PersonalDetails {
-  firstName: string;
-  middleName: string;
-  lastName: string;
-  dateOfBirth: string;
-  email: string;
-  phoneNumber: string;
-  residentialAddress: string;
-  state: string;
-  lga: string;
-}
-
 export interface KYCState {
   // Step tracking
   currentStep: number;
@@ -119,11 +124,11 @@ export interface KYCState {
 
   // Form data
   idInformation: IDInformation | null;
-  addressPartners: AddressPartners;
-  currentAddress: CurrentAddress | null;
-  userData: UserData | null;
   personalDetails: Partial<PersonalDetails>;
   capturedImage: CapturedImage | null;
+  addressPartners: AddressPartners;
+  userData: UserData | null;
+  currentAddress: CurrentAddress | null;
   pepStatus: PepStatus | null;
 
   // Verification status
@@ -139,14 +144,14 @@ type KYCAction =
   | { type: "SET_CURRENT_STEP"; payload: number }
   | { type: "SET_COMPLETED_STEPS"; payload: number[] }
   | { type: "SET_ID_INFORMATION"; payload: IDInformation }
-  | { type: "SET_USER_DATA"; payload: UserData }
-  | { type: "SET_VERIFICATION_STATUS"; payload: Partial<VerificationStatus> }
   | { type: "SET_PERSONAL_DETAILS"; payload: Partial<PersonalDetails> }
   | { type: "UPDATE_PERSONAL_DETAILS"; payload: Partial<PersonalDetails> }
   | { type: "SET_CAPTURED_IMAGE"; payload: CapturedImage }
   | { type: "SET_ADDRESS_PARTNERS"; payload: AddressPartners }
+  | { type: "SET_USER_DATA"; payload: UserData }
   | { type: "SET_CURRENT_ADDRESS"; payload: CurrentAddress }
   | { type: "SET_PEP_STATUS"; payload: PepStatus }
+  | { type: "SET_VERIFICATION_STATUS"; payload: Partial<VerificationStatus> }
   | { type: "SET_LOADING"; payload: boolean }
   | { type: "SET_ERROR"; payload: string | null }
   | { type: "RESET_KYC" };
@@ -162,9 +167,9 @@ const initialState: KYCState = {
     selected: [],
     verified: [],
   },
-  pepStatus: null,
-  currentAddress: null,
   userData: null,
+  currentAddress: null,
+  pepStatus: null,
   verificationStatus: {
     bvnExists: null,
     faceVerification: "pending",
@@ -173,6 +178,37 @@ const initialState: KYCState = {
   },
   isLoading: false,
   error: null,
+};
+
+// Load state from localStorage
+const loadStateFromLocalStorage = (): KYCState => {
+  if (typeof window === "undefined") return initialState;
+
+  try {
+    const savedState = localStorage.getItem("kycState");
+    if (savedState) {
+      const parsed = JSON.parse(savedState);
+      console.log("✅ Loaded KYC state from localStorage:", parsed);
+      return parsed;
+    } else {
+      console.log("ℹ️ No saved KYC state found, using initial state");
+    }
+  } catch (error) {
+    console.error("❌ Error loading KYC state from localStorage:", error);
+  }
+  return initialState;
+};
+
+// Save state to localStorage
+const saveStateToLocalStorage = (state: KYCState) => {
+  if (typeof window === "undefined") return;
+
+  try {
+    localStorage.setItem("kycState", JSON.stringify(state));
+    console.log("💾 Saved KYC state to localStorage");
+  } catch (error) {
+    console.error("❌ Error saving KYC state to localStorage:", error);
+  }
 };
 
 // Reducer function
@@ -197,12 +233,6 @@ function kycReducer(state: KYCState, action: KYCAction): KYCState {
         completedSteps: [...state.completedSteps, 1],
       };
 
-    case "SET_ADDRESS_PARTNERS":
-      return {
-        ...state,
-        addressPartners: action.payload,
-      };
-
     case "SET_PERSONAL_DETAILS":
       return {
         ...state,
@@ -222,6 +252,12 @@ function kycReducer(state: KYCState, action: KYCAction): KYCState {
       return {
         ...state,
         capturedImage: action.payload,
+      };
+
+    case "SET_ADDRESS_PARTNERS":
+      return {
+        ...state,
+        addressPartners: action.payload,
       };
 
     case "SET_USER_DATA":
@@ -279,7 +315,16 @@ const KYCContext = createContext<{
 
 // Provider component
 export function KYCProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(kycReducer, initialState);
+  const [state, dispatch] = useReducer(
+    kycReducer,
+    undefined,
+    loadStateFromLocalStorage
+  );
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    saveStateToLocalStorage(state);
+  }, [state]);
 
   return (
     <KYCContext.Provider value={{ state, dispatch }}>
@@ -329,8 +374,8 @@ export function useKYCActions() {
     setCurrentAddress: (address: CurrentAddress) =>
       dispatch({ type: "SET_CURRENT_ADDRESS", payload: address }),
 
-    setPepStatus: (status: PepStatus) =>
-      dispatch({ type: "SET_PEP_STATUS", payload: status }),
+    setPepStatus: (pepStatus: PepStatus) =>
+      dispatch({ type: "SET_PEP_STATUS", payload: pepStatus }),
 
     setVerificationStatus: (status: Partial<VerificationStatus>) =>
       dispatch({ type: "SET_VERIFICATION_STATUS", payload: status }),
@@ -342,6 +387,10 @@ export function useKYCActions() {
       dispatch({ type: "SET_ERROR", payload: error }),
 
     resetKYC: () => {
+      // Clear localStorage when resetting
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("kycState");
+      }
       dispatch({ type: "RESET_KYC" });
     },
   };
