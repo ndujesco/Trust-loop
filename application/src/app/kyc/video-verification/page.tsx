@@ -15,6 +15,9 @@ declare global {
   }
 }
 
+// Location verification threshold in meters
+const LOCATION_VERIFICATION_THRESHOLD_METERS = 500;
+
 const VideoVerificationPage: React.FC = () => {
   const router = useRouter();
   const { state } = useKYC();
@@ -815,26 +818,28 @@ const VideoVerificationPage: React.FC = () => {
             Math.cos((userLat * Math.PI) / 180),
         });
 
-        if (distance <= 500) {
+        if (distance <= LOCATION_VERIFICATION_THRESHOLD_METERS) {
           setLocationVerified(true);
           setCheckingLocation(false);
         } else {
-          // For mocking purposes, we'll allow it but show a warning
-          setLocationVerified(true);
+          // User is too far from the selected location
+          setLocationVerified(false);
           setCheckingLocation(false);
-          console.warn(
-            `Location is ${distance.toFixed(
+          setError(
+            `You are ${distance.toFixed(
               0
-            )}m away (mocking: allowing anyway)`
+            )}m away from the selected location. Please move to within ${LOCATION_VERIFICATION_THRESHOLD_METERS}m of the location to verify.`
           );
         }
       },
       (error) => {
         console.error("Geolocation error:", error);
-        // For mocking, we'll allow them to continue without location
-        setLocationVerified(true);
+        // Location access denied or failed
+        setLocationVerified(false);
         setCheckingLocation(false);
-        setError("Could not verify location. Continuing anyway (mocked).");
+        setError(
+          "Could not access your location. Please enable location permissions and try again."
+        );
       }
     );
   };
@@ -1460,6 +1465,30 @@ const VideoVerificationPage: React.FC = () => {
                       Verifying your location...
                     </span>
                   </div>
+                ) : !checkingLocation && error ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 p-3 bg-[var(--error)]/10 border border-[var(--error)] rounded-lg">
+                      <svg
+                        className="w-5 h-5 text-[var(--error)]"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <div className="flex-1">
+                        <span className="text-[var(--error)] font-medium">
+                          Location Verification Failed
+                        </span>
+                        <p className="text-xs text-[var(--text-tertiary)] mt-1">
+                          {error}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 ) : locationVerified && userGpsLocation ? (
                   <div className="space-y-4">
                     {/* Check distance and show appropriate message */}
@@ -1474,7 +1503,7 @@ const VideoVerificationPage: React.FC = () => {
                         verifiedLng
                       );
 
-                      if (distance <= 500) {
+                      if (distance <= LOCATION_VERIFICATION_THRESHOLD_METERS) {
                         return (
                           <div className="flex items-center gap-3 p-3 bg-[var(--success)]/10 border border-[var(--success)] rounded-lg">
                             <svg
@@ -1490,7 +1519,9 @@ const VideoVerificationPage: React.FC = () => {
                             </svg>
                             <div className="flex-1">
                               <span className="text-[var(--success)] font-medium">
-                                Location verified (within 500m)
+                                {/* Location verified (within{" "}
+                                {LOCATION_VERIFICATION_THRESHOLD_METERS}m) */}
+                                Location verified within 500m
                               </span>
                               <p className="text-xs text-[var(--text-tertiary)] mt-1">
                                 GPS: {userGpsLocation.lat.toFixed(6)},{" "}
@@ -1573,6 +1604,31 @@ const VideoVerificationPage: React.FC = () => {
                       );
                     }
 
+                    // If location verification failed, show retry and manual options
+                    if (!locationVerified && error) {
+                      return (
+                        <div className="space-y-3">
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setError("");
+                              setCheckingLocation(false);
+                              requestUserLocation();
+                            }}
+                            className="w-full"
+                          >
+                            Retry Location Check
+                          </Button>
+                          <Button
+                            onClick={handleManualVerificationRedirect}
+                            className="w-full"
+                          >
+                            Manual Verification (~15 min)
+                          </Button>
+                        </div>
+                      );
+                    }
+
                     // Check if user is far from location to show two options
                     if (
                       locationVerified &&
@@ -1588,7 +1644,7 @@ const VideoVerificationPage: React.FC = () => {
                         verifiedLng
                       );
 
-                      if (distance > 500) {
+                      if (distance > LOCATION_VERIFICATION_THRESHOLD_METERS) {
                         return (
                           <div className="space-y-3">
                             <Button
@@ -1613,12 +1669,12 @@ const VideoVerificationPage: React.FC = () => {
                       }
                     }
 
-                    // Default button for close location or when loading
+                    // Default button for verified location (within 500m)
                     return (
                       <Button
                         onClick={handleLocationModalClose}
                         className="w-full"
-                        disabled={checkingLocation}
+                        disabled={!locationVerified || checkingLocation}
                       >
                         Continue to Video Recording
                       </Button>
