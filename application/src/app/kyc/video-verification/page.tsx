@@ -1023,7 +1023,7 @@ const VideoVerificationPage: React.FC = () => {
       const userId = state.userData!._id;
       const response = await fetch("/api/user/address/verify/liveness", {
         method: "POST",
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({ userId, success: true }),
       });
 
       if (!response.ok) {
