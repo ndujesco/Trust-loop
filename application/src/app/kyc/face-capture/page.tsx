@@ -59,7 +59,13 @@ const FaceCapturePage: React.FC = () => {
       if (data.stage === "done") {
         socket.close();
         stopCamera();
-        router.push("/kyc/pep-status");
+        const verificationStatus = state.userData?.verificationStatus;
+        console.log("verificationStatus", verificationStatus);
+        if (verificationStatus === 2 || verificationStatus === 3) {
+          router.push("/kyc/previously-verified");
+        } else {
+          router.push("/kyc/pep-status");
+        }
       }
     };
 
@@ -164,117 +170,6 @@ const FaceCapturePage: React.FC = () => {
       setShouldRehydrate(false);
     }
   }, [hasPermission, capturedImage, shouldRehydrate]);
-
-  const capturePhoto = async () => {
-    if (!videoRef.current || !canvasRef.current) return;
-
-    setIsCapturing(true);
-    setCurrentInstruction("");
-
-    try {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      const context = canvas.getContext("2d");
-      if (!context) return;
-
-      // Draw video frame to canvas
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      // Convert to Blob for S3 upload
-      const blob: Blob = await new Promise((resolve) =>
-        canvas.toBlob((b) => resolve(b as Blob), "image/jpeg", 0.9)
-      );
-
-      setCapturedImage(URL.createObjectURL(blob));
-      stopCamera();
-
-      const userId = state.userData?._id || "";
-      if (!userId) throw new Error("User not found in state");
-
-      // ---------- Upload to S3 ----------
-      setUploadProgress("Uploading liveness photo...");
-
-      const safeName = `liveness-${Date.now()}.jpg`;
-      const s3Key = `liveness/${safeName}`;
-
-      const upload = new Upload({
-        client: s3,
-        params: {
-          Bucket: BUCKET,
-          Key: s3Key,
-          Body: blob,
-          ContentType: "image/jpeg",
-        },
-        queueSize: 4,
-        partSize: 5 * 1024 * 1024,
-      });
-
-      await upload.done();
-
-      const photoUrl = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${encodeURIComponent(
-        s3Key
-      )}`;
-
-      // ---------- Verify with Python backend ----------
-      setUploadProgress("Verifying liveness...");
-
-      const pythonResp = await axios.post(
-        `${PYTHON_BACKEND}/api/liveness-check`,
-        {
-          photo_url: photoUrl,
-        }
-      );
-
-      const verification = pythonResp.data;
-      if (!verification || verification.status !== "success") {
-        throw new Error("Liveness verification failed");
-      }
-
-      if (verification.result !== "real") {
-        setError("Liveness check failed. Please retake the photo.");
-        setIsCapturing(false);
-        setUploadProgress("");
-        return;
-      }
-
-      // ---------- Update local backend ----------
-      setUploadProgress("Saving liveness data...");
-
-      const saveResp = await fetch("/api/upload/liveness", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId,
-          liveness: { photo_url: photoUrl },
-        }),
-      });
-
-      if (!saveResp.ok) {
-        throw new Error("Failed to save liveness verification data");
-      }
-
-      const saveData = await saveResp.json();
-      setUserData(saveData.user);
-
-      // ---------- Route user based on verification ----------
-      const verificationStatus = saveData.user?.verificationStatus;
-      if (verificationStatus === 2 || verificationStatus === 3) {
-        router.push("/kyc/previously-verified");
-      } else {
-        router.push("/kyc/document-submission");
-      }
-    } catch (err: any) {
-      console.error("Error capturing photo:", err);
-      setError(
-        err.message || "Failed to complete liveness check. Please try again."
-      );
-    } finally {
-      setIsCapturing(false);
-      setUploadProgress("");
-    }
-  };
 
   const handleBack = () => {
     router.push("/kyc/face-verification");
@@ -451,48 +346,6 @@ const FaceCapturePage: React.FC = () => {
           {/* Hidden canvas for capture */}
           <canvas ref={canvasRef} className="hidden" />
         </div>
-
-        {/* Capture Button */}
-        {/* Capture / Upload Button */}
-        {/* <div className="flex gap-3">
-          {!capturedImage || isCapturing ? (
-            <Button
-              size="lg"
-              onClick={capturePhoto}
-              loading={isCapturing}
-              disabled={!!uploadProgress}
-              className="flex-1"
-            >
-              {isCapturing
-                ? uploadProgress
-                  ? uploadProgress // e.g. "Uploading liveness photo..." or "Verifying liveness..."
-                  : "Capturing..."
-                : "Capture Photo"}
-            </Button>
-          ) : (
-            <>
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={handleRetake}
-                disabled={isCapturing}
-                className="flex-1"
-              >
-                {error ? "Retake (Failed)" : "Retake"}
-              </Button>
-
-              {uploadProgress && (
-                <Button
-                  size="lg"
-                  disabled
-                  className="flex-1 opacity-80 cursor-not-allowed"
-                >
-                  {uploadProgress}
-                </Button>
-              )}
-            </>
-          )}
-        </div> */}
 
         {/* Tips */}
         <Card variant="outlined">
