@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import KYCLayout from "@/components/layouts/KYCLayout";
-import { useKYC } from "@/contexts/KYCContext";
+import { useKYC, useKYCActions } from "@/contexts/KYCContext";
 import { useUtilLocation } from "@/contexts/UtilityContext";
 
 // Google Maps TypeScript declarations
@@ -18,6 +18,7 @@ declare global {
 const VideoVerificationPage: React.FC = () => {
   const router = useRouter();
   const { state } = useKYC();
+  const { setUserData } = useKYCActions();
 
   const [currentStep, setCurrentStep] = useState<"map" | "video">("map");
   const [isRecording, setIsRecording] = useState(false);
@@ -81,8 +82,8 @@ const VideoVerificationPage: React.FC = () => {
     ? `${state.currentAddress.address}, ${state.currentAddress.area}, ${state.currentAddress.lga}, ${state.currentAddress.state}`
     : state.userData?.address?.raw || state.userData?.address?.fromBvn || "";
 
-    console.log(userAddress);
-    
+  console.log(userAddress);
+
   // Initialize Google Maps with Street View
   useEffect(() => {
     const createStreetView = (lat: number, lng: number) => {
@@ -1029,6 +1030,9 @@ const VideoVerificationPage: React.FC = () => {
         throw new Error("Failed to submit video");
       }
 
+     const saveData = await response.json();
+    setUserData(saveData.user);
+
       // Navigate to success page
       router.push("/kyc/success");
     } catch (err) {
@@ -1284,17 +1288,16 @@ const VideoVerificationPage: React.FC = () => {
                     variant={isRecording ? "secondary" : "primary"}
                     size="lg"
                     disabled={!cameraInitialized}
-                    className={`px-8 ${
-                      isRecording
+                    className={`px-8 ${isRecording
                         ? "bg-red-500 hover:bg-red-600 text-white"
                         : ""
-                    }`}
+                      }`}
                   >
                     {!cameraInitialized
                       ? "Initializing Camera..."
                       : isRecording
-                      ? "Stop Recording"
-                      : "Start Recording"}
+                        ? "Stop Recording"
+                        : "Start Recording"}
                   </Button>
                 ) : (
                   <div className="text-center space-y-3">
@@ -1808,11 +1811,10 @@ const VideoVerificationPage: React.FC = () => {
                             <button
                               key={index}
                               onClick={() => setCurrentImageIndex(index)}
-                              className={`w-2 h-2 rounded-full transition-all ${
-                                index === currentImageIndex
+                              className={`w-2 h-2 rounded-full transition-all ${index === currentImageIndex
                                   ? "bg-[var(--primary-teal)]"
                                   : "bg-[var(--border-primary)] hover:bg-[var(--text-tertiary)]"
-                              }`}
+                                }`}
                             />
                           ))}
                         </div>

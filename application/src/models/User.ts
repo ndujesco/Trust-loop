@@ -62,6 +62,7 @@ export interface IUser extends Document {
   firstName: string;
   middleName?: string;
   lastName: string;
+  verificationId?: string;
   fullNameIndexed?: string;
   dob?: Date;
   placeOfBirth?: string;
@@ -162,6 +163,7 @@ const UserSchema = new Schema<IUser>(
     firstName: { type: String, required: true, trim: true },
     middleName: { type: String, trim: true },
     lastName: { type: String, required: true, trim: true },
+    verificationId: { type: String, required: false, trim: true },
     fullNameIndexed: { type: String, index: true },
     dob: Date,
     placeOfBirth: String,

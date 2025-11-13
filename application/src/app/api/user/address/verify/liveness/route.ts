@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ message: "User not found" }, { status: 404 });
 
     user.verificationStatus = 3;
+    user.verificationId = `${Date.now().toString().slice(-8)}`
     await user.save();
 
     return NextResponse.json({ message: "Verification status updated to 3", user }, { status: 200 });

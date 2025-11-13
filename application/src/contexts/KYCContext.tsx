@@ -42,6 +42,7 @@ export interface UserData {
   firstName: string;
   middleName: string;
   lastName: string;
+  verificationId: string;
   bvn: string;
   nin: string;
   ninImage: string;
