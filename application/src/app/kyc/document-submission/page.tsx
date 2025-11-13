@@ -170,6 +170,8 @@ const DocumentSubmissionPage: React.FC = () => {
       }
 
       const saveData = await saveResp.json();
+      console.log(saveData);
+      
       if (saveData.user) {
         setUserData(saveData.user);
         router.push("/kyc/video-verification");

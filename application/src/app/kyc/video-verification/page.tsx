@@ -79,7 +79,7 @@ const VideoVerificationPage: React.FC = () => {
   // Get user's verified address (prioritize current address if set, otherwise use BVN address)
   const userAddress = state.currentAddress?.address
     ? `${state.currentAddress.address}, ${state.currentAddress.area}, ${state.currentAddress.lga}, ${state.currentAddress.state}`
-    : state.userData?.address?.fromBvn || "";
+    : state.userData?.address?.raw || state.userData?.address?.fromBvn || "";
 
   // Initialize Google Maps with Street View
   useEffect(() => {
