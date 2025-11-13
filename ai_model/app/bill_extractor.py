@@ -114,9 +114,7 @@ def extract_address_from_pdf(file_path: str) -> str:
     try:
         # 1. Document AI: OCR Processing
         opts = ClientOptions(api_endpoint=f"{LOCATION}-documentai.googleapis.com")
-        documentai_client = documentai.DocumentProcessorServiceClient(
-            client_options=opts
-        )
+        documentai_client = documentai.DocumentProcessorServiceClient()
         resource_name = documentai_client.processor_path(
             PROJECT_ID, LOCATION, PROCESSOR_ID
         )

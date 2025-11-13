@@ -202,7 +202,7 @@ const DocumentSubmissionPage: React.FC = () => {
   return (
     <KYCLayout
       currentStep={4}
-      totalSteps={6}
+      totalSteps={8}
       steps={["ID Info", "Address", "Face", "Capture", "Documents", "Video"]}
       onBack={handleBack}
       onHelp={handleHelp}

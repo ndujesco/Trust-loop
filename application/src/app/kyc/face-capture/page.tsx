@@ -59,7 +59,7 @@ const FaceCapturePage: React.FC = () => {
       if (data.stage === "done") {
         socket.close();
         stopCamera();
-        router.push("/kyc/document-submission");
+        router.push("/kyc/pep-status");
       }
     };
 
@@ -321,7 +321,7 @@ const FaceCapturePage: React.FC = () => {
     return (
       <KYCLayout
         currentStep={4}
-        totalSteps={6}
+        totalSteps={8}
         steps={["ID Info", "Address", "Face", "Capture", "Documents", "Video"]}
         onBack={handleBack}
         onHelp={handleHelp}
@@ -365,7 +365,7 @@ const FaceCapturePage: React.FC = () => {
   return (
     <KYCLayout
       currentStep={4}
-      totalSteps={6}
+      totalSteps={8}
       steps={["ID Info", "Address", "Face", "Capture", "Documents", "Video"]}
       onBack={handleBack}
       onHelp={handleHelp}
@@ -374,7 +374,8 @@ const FaceCapturePage: React.FC = () => {
         {/* Instruction */}
         <div className="text-center">
           <h1 className="text-xl font-bold text-[var(--text-primary)] mb-2">
-            {stage === "calibrating" && "Please keep your head steady in the box for a moment"}
+            {stage === "calibrating" &&
+              "Please keep your head steady in the box for a moment"}
             {stage === "shake_head" && "Please shake your head left and right"}
             {stage === "open_mouth" && "Now open your mouth"}
             {stage === "blink" && "Finally, blink your eyes"}
