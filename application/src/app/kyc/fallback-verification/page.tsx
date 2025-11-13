@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/Card";
 import KYCLayout from "@/components/layouts/KYCLayout";
 
 const WS_URL = (process.env.NEXT_PUBLIC_WS_URL ||
-  "ws://trustloop-websocket-0q27xj-c90237-178-128-8-109.traefik.me") as string;
+  "wss://ws.alfredemmanuel.com/") as string;
 
 const FallbackVerificationPage: React.FC = () => {
   const router = useRouter();
