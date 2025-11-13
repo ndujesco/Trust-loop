@@ -17,8 +17,8 @@ const KYCSuccessPage: React.FC = () => {
   
 
   useEffect(() => {
-    // Generate verification ID on client side only
-    setVerificationId(`KYC-${state.userData?.verificationId}`);
+    console.log("KYC State on Success Page:", state.userData);
+    setVerificationId(`KYC-${state.userData?.verificationId || Date.now().toString().slice(-8)}`);
 
     // Trigger animation after component mounts
     setTimeout(() => setShowAnimation(true), 100);

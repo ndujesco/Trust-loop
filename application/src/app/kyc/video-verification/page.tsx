@@ -1031,7 +1031,8 @@ const VideoVerificationPage: React.FC = () => {
       }
 
      const saveData = await response.json();
-    setUserData(saveData.user);
+     setUserData(saveData.user);
+     console.log("Video submitted successfully:", saveData);
 
       // Navigate to success page
       router.push("/kyc/success");

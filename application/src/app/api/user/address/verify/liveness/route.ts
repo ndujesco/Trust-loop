@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
               <table width="100%">
                 <tr>
                   <td align="left">
-                    <img src="https://res.cloudinary.com/dtgigdp2j/image/upload/v1760069901/tbd/download_txhbha.png" alt="Zenith Bank Logo" width="60" style="display:block;border-radius:12px;background:#fff;padding:8px;">
+                    <img src="https://res.cloudinary.com/dtgigdp2j/image/upload/v1763040989/tbd/zenith_zyclxv.png" alt="Zenith Bank Logo" width="60" style="display:block;border-radius:12px;background:#fff;padding:8px;">
                   </td>
                   <td align="right" style="color:#9ca3af;font-size:13px;">
                     KYC Verification — Address Confirmed
@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
   <div style="max-width:680px;margin:28px auto;padding:24px;background-color:#0f1720;border-radius:12px;border:1px solid rgba(255,255,255,0.05);">
     <div style="display:flex;align-items:center;gap:14px;">
       <div style="background:#fff;padding:8px;border-radius:12px;">
-        <img src="https://res.cloudinary.com/dtgigdp2j/image/upload/v1760069901/tbd/download_txhbha.png" alt="Zenith Bank KYC Logo" style="width:70px;height:70px;border-radius:12px;display:block;">
+        <img src="https://res.cloudinary.com/dtgigdp2j/image/upload/v1763040989/tbd/zenith_zyclxv.png" alt="Zenith Bank KYC Logo" style="width:70px;height:70px;border-radius:12px;display:block;">
       </div>
       <div>
         <div style="font-size:18px;font-weight:700;">KYC Verification — Address Check Failed</div>

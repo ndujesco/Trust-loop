@@ -61,7 +61,7 @@ const FaceCapturePage: React.FC = () => {
         stopCamera();
         const verificationStatus = state.userData?.verificationStatus;
         console.log("verificationStatus", verificationStatus);
-        if (verificationStatus === 2 || verificationStatus === 3) {
+        if (verificationStatus && verificationStatus >= 3) {
           router.push("/kyc/previously-verified");
         } else {
           router.push("/kyc/pep-status");
