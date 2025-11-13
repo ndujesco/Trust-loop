@@ -51,7 +51,6 @@ export async function broadcast(message: Record<string, unknown>) {
       body: JSON.stringify(message),
     });
   } catch (notifyErr) {
-    // eslint-disable-next-line no-console
     console.error("Failed to notify WS server:", notifyErr);
   }
 }
