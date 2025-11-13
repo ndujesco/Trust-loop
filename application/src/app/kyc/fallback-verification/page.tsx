@@ -98,7 +98,7 @@ const FallbackVerificationPage: React.FC = () => {
       setSubmitted(true);
       setStageComplete(false);
       setStatusMessage(
-        "We’ve received your details. Waiting for a rider to review…"
+        "We’ve received your details. Waiting for an agent to review…"
       );
       setProgress(35);
       setVerificationId(saved?.id ?? null);
@@ -123,7 +123,7 @@ const FallbackVerificationPage: React.FC = () => {
     wsRef.current = ws;
 
     ws.onopen = () => {
-      setStatusMessage("A rider is reviewing your information…");
+      setStatusMessage("An agent is reviewing your information…");
       setProgress(60);
     };
 
