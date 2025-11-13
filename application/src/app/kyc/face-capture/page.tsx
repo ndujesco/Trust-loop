@@ -32,6 +32,7 @@ const FaceCapturePage: React.FC = () => {
   const [uploadProgress, setUploadProgress] = useState<string>("");
 
   const [ws, setWs] = useState<WebSocket | null>(null);
+  const [wsConnected, setWsConnected] = useState(false);
   const [stage, setStage] = useState("calibrating");
 
   const instructions = [
@@ -41,16 +42,20 @@ const FaceCapturePage: React.FC = () => {
     "Keep still while we capture your photo",
   ];
 
-  // Effect to receive websocket data
+  // Effect to establish WebSocket connection
   useEffect(() => {
-    startCamera();
-
     const socket = new WebSocket(
       `${PYTHON_BACKEND.replace("http", "ws")}/ws/liveness`
     );
     setWs(socket);
 
-    socket.onopen = () => console.log("✅ Connected to liveness WebSocket");
+    socket.onopen = () => {
+      console.log("✅ Connected to liveness WebSocket");
+      setWsConnected(true);
+      // Start camera only after WebSocket is connected
+      startCamera();
+    };
+
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
       console.log("📩 Liveness update:", data);
@@ -69,21 +74,30 @@ const FaceCapturePage: React.FC = () => {
       }
     };
 
-    socket.onerror = (err) => console.error("WebSocket error:", err);
-    socket.onclose = () => console.log("🔌 WebSocket closed");
+    socket.onerror = (err) => {
+      console.error("WebSocket error:", err);
+      setError("Failed to connect to verification service. Please try again.");
+    };
+
+    socket.onclose = () => {
+      console.log("🔌 WebSocket closed");
+      setWsConnected(false);
+    };
 
     return () => {
       stopCamera();
-      socket.close();
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.close();
+      }
     };
   }, []);
 
   // Effect to send frames to backend
   useEffect(() => {
-    // if (!ws || !videoRef.current) return;
+    if (!ws || !wsConnected || !hasPermission) return;
 
     const interval = setInterval(async () => {
-      if (ws!.readyState !== WebSocket.OPEN) return;
+      if (ws.readyState !== WebSocket.OPEN) return;
       const canvas = document.createElement("canvas");
       const video = videoRef.current;
       const ctx = canvas.getContext("2d");
@@ -97,12 +111,12 @@ const FaceCapturePage: React.FC = () => {
 
       // ✅ Backend expects JSON with key "frame"
       if (stage !== "done") {
-        ws!.send(JSON.stringify({ frame: base64Frame }));
+        ws.send(JSON.stringify({ frame: base64Frame }));
       }
     }, 200); // ~5 FPS
 
     return () => clearInterval(interval);
-  }, [ws, videoRef]);
+  }, [ws, wsConnected, hasPermission, stage]);
 
   const startCamera = async () => {
     try {
@@ -191,7 +205,7 @@ const FaceCapturePage: React.FC = () => {
     await startCamera();
   };
 
-  if (isLoading) {
+  if (isLoading || !wsConnected) {
     return (
       <KYCLayout
         currentStep={4}
@@ -204,7 +218,9 @@ const FaceCapturePage: React.FC = () => {
           <div className="text-center space-y-4">
             <LoadingSpinner size="lg" />
             <p className="text-[var(--text-tertiary)]">
-              Initializing camera...
+              {!wsConnected
+                ? "Connecting to verification service..."
+                : "Initializing camera..."}
             </p>
           </div>
         </div>

@@ -71,10 +71,10 @@ const PepStatusPage: React.FC = () => {
       <div className="max-w-2xl mx-auto animate-fade-in">
         {/* Title Section - No background, just text */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-primary mb-4">
+          <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-4">
             Politically Exposed Person (PEP) Screening
           </h1>
-          <p className="text-text-secondary">
+          <p className="text-[var(--text-primary)]">
             We need to verify if you or anyone related to you holds or has held
             a political office.
           </p>
@@ -100,7 +100,7 @@ const PepStatusPage: React.FC = () => {
               <h3 className="text-sm font-medium text-warning">
                 Important Notice
               </h3>
-              <p className="text-sm text-text-secondary mt-1">
+              <p className="text-sm text-[var(--text-primary)] mt-1">
                 Please provide accurate information. Providing false information
                 may result in account restrictions or legal consequences.
               </p>
@@ -111,11 +111,11 @@ const PepStatusPage: React.FC = () => {
         {/* Question 1 Block */}
         <Card className="mb-6">
           <CardContent className="p-6">
-            <h3 className="text-lg font-semibold text-primary mb-4">
+            <h3 className="text-lg font-semibold text-[var(--text-tertiary)] mb-4">
               1. Are you currently or have you ever been a Politically Exposed
               Person (PEP)?
             </h3>
-            <p className="text-sm text-text-secondary mb-6">
+            <p className="text-sm text-[var(--text-tertiary)] mb-6">
               This includes holding positions such as President, Vice President,
               Governor, Senator, Minister, Commissioner, or similar political
               offices.
@@ -130,7 +130,7 @@ const PepStatusPage: React.FC = () => {
                   onChange={() => setIsPep(true)}
                   className="w-4 h-4 text-primary-teal bg-bg-primary border-border-primary focus:ring-primary-teal focus:ring-2"
                 />
-                <span className="text-text-primary">
+                <span className="text-[var(--text-tertiary)]">
                   Yes, I am or have been a PEP
                 </span>
               </label>
@@ -143,7 +143,9 @@ const PepStatusPage: React.FC = () => {
                   onChange={() => setIsPep(false)}
                   className="w-4 h-4 text-primary-teal bg-bg-primary border-border-primary focus:ring-primary-teal focus:ring-2"
                 />
-                <span className="text-text-primary">No, I am not a PEP</span>
+                <span className="text-[var(--text-tertiary)]">
+                  No, I am not a PEP
+                </span>
               </label>
             </div>
           </CardContent>
@@ -152,11 +154,11 @@ const PepStatusPage: React.FC = () => {
         {/* Question 2 Block */}
         <Card className="mb-8">
           <CardContent className="p-6">
-            <h3 className="text-lg font-semibold text-primary mb-4">
+            <h3 className="text-lg font-semibold text-[var(--text-tertiary)] mb-4">
               2. Are you related to someone who is currently or has been a
               Politically Exposed Person?
             </h3>
-            <p className="text-sm text-text-secondary mb-6">
+            <p className="text-sm text-[var(--text-tertiary)] mb-6">
               This includes immediate family members such as spouse, parents,
               children, or siblings who hold or have held political positions.
             </p>
@@ -170,7 +172,7 @@ const PepStatusPage: React.FC = () => {
                   onChange={() => setIsRelatedToPep(true)}
                   className="w-4 h-4 text-primary-teal bg-bg-primary border-border-primary focus:ring-primary-teal focus:ring-2"
                 />
-                <span className="text-text-primary">
+                <span className="text-[var(--text-tertiary)]">
                   Yes, I am related to a PEP
                 </span>
               </label>
@@ -183,7 +185,7 @@ const PepStatusPage: React.FC = () => {
                   onChange={() => setIsRelatedToPep(false)}
                   className="w-4 h-4 text-primary-teal bg-bg-primary border-border-primary focus:ring-primary-teal focus:ring-2"
                 />
-                <span className="text-text-primary">
+                <span className="text-[var(--text-tertiary)]">
                   No, I am not related to a PEP
                 </span>
               </label>

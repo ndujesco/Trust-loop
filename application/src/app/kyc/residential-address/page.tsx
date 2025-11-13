@@ -88,7 +88,7 @@ const ResidentialAddressPage: React.FC = () => {
             <h3 className="text-lg font-semibold text-[var(--text-primary)]">
               Address from BVN
             </h3>
-            <div className="bg-[var(--bg-secondary)] rounded-lg p-4">
+            <div className="bg-[var(--bg-primary)] rounded-lg p-4">
               <p className="text-[var(--text-secondary)] font-mono">
                 {bvnAddress}
               </p>
