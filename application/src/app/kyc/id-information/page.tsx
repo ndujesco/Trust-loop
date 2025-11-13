@@ -12,7 +12,9 @@ import { useKYCActions } from "@/contexts/KYCContext";
 interface IDValues {
   bvn: string;
   nin: string;
+  email: string;
 }
+
 
 type ActiveTab = "bvn" | "nin";
 
@@ -20,7 +22,7 @@ const IDInformationPage: React.FC = () => {
   const router = useRouter();
   const { setIdInformation, setUserData } = useKYCActions();
   const [activeTab, setActiveTab] = useState<ActiveTab>("bvn");
-  const [idValues, setIdValues] = useState<IDValues>({ bvn: "", nin: "" });
+  const [idValues, setIdValues] = useState<IDValues>({ bvn: "", nin: "", email: "" });
   const [isValidating, setIsValidating] = useState(false);
   const [bvnError, setBvnError] = useState("");
   const [ninError, setNinError] = useState("");
@@ -173,6 +175,7 @@ const IDInformationPage: React.FC = () => {
         body: JSON.stringify({
           bvn: idValues.bvn,
           nin: idValues.nin,
+          email: idValues.email
         }),
       });
 
@@ -226,18 +229,16 @@ const IDInformationPage: React.FC = () => {
         <div className="flex gap-2 p-1 bg-[var(--bg-secondary)] rounded-lg">
           <button
             onClick={() => setActiveTab("bvn")}
-            className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
-              activeTab === "bvn"
+            className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${activeTab === "bvn"
                 ? "bg-[var(--primary-teal)] text-white"
                 : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-            }`}
+              }`}
           >
             <span>BVN</span>
             {bvnValidated && (
               <svg
-                className={`w-4 h-4 ${
-                  activeTab === "bvn" ? "text-white" : "text-[var(--success)]"
-                }`}
+                className={`w-4 h-4 ${activeTab === "bvn" ? "text-white" : "text-[var(--success)]"
+                  }`}
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -251,18 +252,16 @@ const IDInformationPage: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab("nin")}
-            className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
-              activeTab === "nin"
+            className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${activeTab === "nin"
                 ? "bg-[var(--primary-teal)] text-white"
                 : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-            }`}
+              }`}
           >
             <span>NIN</span>
             {ninValidated && (
               <svg
-                className={`w-4 h-4 ${
-                  activeTab === "nin" ? "text-white" : "text-[var(--success)]"
-                }`}
+                className={`w-4 h-4 ${activeTab === "nin" ? "text-white" : "text-[var(--success)]"
+                  }`}
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -276,6 +275,7 @@ const IDInformationPage: React.FC = () => {
           </button>
         </div>
 
+        {/* ID Input Fields */}
         {/* ID Input Fields */}
         <div className="space-y-6">
           {/* BVN Input */}
@@ -300,7 +300,7 @@ const IDInformationPage: React.FC = () => {
             </div>
           )}
 
-          {/* NIN Input */}
+          {/* NIN & Email Inputs */}
           {activeTab === "nin" && (
             <div className="space-y-3 animate-fade-in">
               <div className="w-full max-w-xs mx-auto">
@@ -319,9 +319,26 @@ const IDInformationPage: React.FC = () => {
                   className="text-center font-mono text-lg tracking-wider"
                 />
               </div>
+
+              {/* Email Input */}
+              <div className="w-full max-w-xs mx-auto">
+                <Input
+                  label="Email Address"
+                  type="email"
+                  value={idValues.email}
+                  onChange={(e) =>
+                    setIdValues((prev) => ({ ...prev, email: e.target.value }))
+                  }
+                  placeholder="Enter your email"
+                  className="text-center font-mono text-lg tracking-wider"
+                />
+              </div>
             </div>
           )}
         </div>
+
+
+
 
         {/* Validation Status */}
         {isValidating && (

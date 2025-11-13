@@ -9,6 +9,7 @@ import { z } from "zod";
 const createUserSchema = z.object({
   nin: z.string().min(8).max(11),
   bvn: z.string().length(11),
+  email: z.string().email(),
   address: z.string().min(1).optional()
 });
 
@@ -25,7 +26,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ message }, { status: 422 });
     }
 
-    const { nin, bvn, address } = parsed.data;
+    const { nin, bvn, address, email } = parsed.data;
 
     // Fetch NIN & BVN records
     const ninRecord = await Nin.findOne({ nin });
@@ -41,7 +42,10 @@ export async function POST(req: Request) {
 
         // Check if user already exists
     const existingUser = await User.findOne({ $or: [{ nin }, { bvn }] });
+
     if (existingUser) {
+      existingUser.email = email;
+      existingUser.save()
       return NextResponse.json({ message: "User already exists", user: existingUser }, { status: 200 });
     }
     
@@ -65,6 +69,7 @@ export async function POST(req: Request) {
     const user = await User.create({
       firstName: ninRecord.firstName,
       middleName: ninRecord.middleName,
+      email,
       lastName: ninRecord.lastName || bvnRecord.lastName,
       bvn,
       nin,
