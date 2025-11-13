@@ -453,7 +453,7 @@ const FaceCapturePage: React.FC = () => {
 
         {/* Capture Button */}
         {/* Capture / Upload Button */}
-        <div className="flex gap-3">
+        {/* <div className="flex gap-3">
           {!capturedImage || isCapturing ? (
             <Button
               size="lg"
@@ -491,7 +491,7 @@ const FaceCapturePage: React.FC = () => {
               )}
             </>
           )}
-        </div>
+        </div> */}
 
         {/* Tips */}
         <Card variant="outlined">

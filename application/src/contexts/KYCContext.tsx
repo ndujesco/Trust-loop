@@ -25,6 +25,7 @@ export interface UserAddress {
   fromNin: string;
   fromBvn: string;
   fromUtility: string | null;
+  raw: string | null;
   googlePlaceId: string | null;
   landmarks: string[];
   movedInAt: string | null;

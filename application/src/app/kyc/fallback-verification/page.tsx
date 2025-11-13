@@ -1,10 +1,37 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import KYCLayout from "@/components/layouts/KYCLayout";
+
+const VERIFICATION_STAGES = [
+  {
+    label: "Verifying your identity…",
+    description:
+      "Confirming the details you just shared with us. This usually takes about 15–45 minutes to complete.",
+  },
+  {
+    label: "Validating address details…",
+    description: "Securely matching your location and contact information.",
+  },
+  {
+    label: "Performing security checks…",
+    description: "Keeping your account safe with quick protective reviews.",
+  },
+  {
+    label: "Final confirmation in progress…",
+    description: "Wrapping up the last steps before we sign off.",
+  },
+  {
+    label: "Verification complete.",
+    description: "All checks are finished—thanks for your patience!",
+  },
+];
+
+const STAGE_DURATION_MS = 5000; // Mocked duration for each stage (5 seconds)
+const COMPLETION_DELAY_MS = 1500; // Brief pause before showing the success state
 
 const FallbackVerificationPage: React.FC = () => {
   const router = useRouter();
@@ -17,6 +44,8 @@ const FallbackVerificationPage: React.FC = () => {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [submitted, setSubmitted] = useState<boolean>(false);
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
+  const [progressStageIndex, setProgressStageIndex] = useState<number>(0);
+  const [stageComplete, setStageComplete] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
 
   const handleBack = () => {
@@ -25,10 +54,7 @@ const FallbackVerificationPage: React.FC = () => {
 
   const isFormValid =
     // !!utilityBill &&
-    !!buildingType &&
-    !!buildingColor &&
-    !!closestLandmark &&
-    !!email;
+    !!buildingType && !!buildingColor && !!closestLandmark && !!email;
 
   const handleSubmit = async () => {
     if (!isFormValid) return;
@@ -53,11 +79,81 @@ const FallbackVerificationPage: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    let completionTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    if (!showSuccessModal) {
+      setProgressStageIndex(0);
+      setStageComplete(false);
+      return () => {
+        if (completionTimeoutId) {
+          clearTimeout(completionTimeoutId);
+        }
+      };
+    }
+
+    let isActive = true;
+    let currentIndex = 0;
+
+    setProgressStageIndex(0);
+    setStageComplete(false);
+
+    const intervalId = setInterval(() => {
+      currentIndex += 1;
+
+      if (!isActive) {
+        return;
+      }
+
+      if (currentIndex < VERIFICATION_STAGES.length) {
+        setProgressStageIndex(currentIndex);
+      }
+
+      if (currentIndex >= VERIFICATION_STAGES.length - 1) {
+        clearInterval(intervalId);
+        completionTimeoutId = setTimeout(() => {
+          if (!isActive) {
+            return;
+          }
+          setStageComplete(true);
+        }, COMPLETION_DELAY_MS);
+      }
+    }, STAGE_DURATION_MS);
+
+    return () => {
+      isActive = false;
+      clearInterval(intervalId);
+      if (completionTimeoutId) {
+        clearTimeout(completionTimeoutId);
+      }
+    };
+  }, [showSuccessModal]);
+
+  const currentStage =
+    VERIFICATION_STAGES[
+      Math.min(progressStageIndex, VERIFICATION_STAGES.length - 1)
+    ];
+  const progressPercent = stageComplete
+    ? 100
+    : Math.min(
+        (progressStageIndex / Math.max(VERIFICATION_STAGES.length - 1, 1)) *
+          100,
+        100
+      );
+
   return (
     <KYCLayout
-      currentStep={4}
-      totalSteps={6}
-      steps={["ID Info", "Address", "Face", "Capture", "Documents", "Video"]}
+      currentStep={6}
+      totalSteps={8}
+      steps={[
+        "ID Info",
+        "Address",
+        "Face",
+        "Capture",
+        "Documents",
+        "Video",
+        "Complete",
+      ]}
       onBack={handleBack}
     >
       <div className="space-y-6 animate-fade-in">
@@ -69,55 +165,6 @@ const FallbackVerificationPage: React.FC = () => {
             Provide your utility bill and a few details about where you live.
           </p>
         </div>
-
-        {/* Utility Bill */}
-        {/* <Card variant="outlined">
-          <CardContent className="space-y-4">
-            <h3 className="text-lg font-semibold text-[var(--text-primary)]">
-              Utility Bill
-            </h3>
-            <div className="border-2 border-dashed border-[var(--border-primary)] rounded-lg p-6 text-center">
-              <input
-                type="file"
-                id="fallback-utility-bill"
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) setUtilityBill(f);
-                }}
-                className="hidden"
-              />
-              <label
-                htmlFor="fallback-utility-bill"
-                className="cursor-pointer flex flex-col items-center gap-3"
-              >
-                <svg
-                  className="w-12 h-12 text-[var(--text-tertiary)]"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                  />
-                </svg>
-                <div>
-                  <p className="text-[var(--text-secondary)] font-medium">
-                    {utilityBill
-                      ? utilityBill.name
-                      : "Click to upload utility bill"}
-                  </p>
-                  <p className="text-[var(--text-tertiary)] text-xs">
-                    PDF, JPG, PNG up to 10MB
-                  </p>
-                </div>
-              </label>
-            </div>
-          </CardContent>
-        </Card> */}
 
         {/* House Details */}
         <Card variant="outlined">
@@ -219,42 +266,91 @@ const FallbackVerificationPage: React.FC = () => {
         {showSuccessModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <Card className="w-full max-w-md">
-              <CardContent className="p-6 text-center space-y-4">
-                <div className="w-16 h-16 mx-auto bg-[var(--primary-teal)] rounded-full flex items-center justify-center">
-                  <svg
-                    className="w-8 h-8 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-semibold text-[var(--text-primary)]">
-                  Verification Submitted Successfully
-                </h3>
-                <div className="space-y-2">
-                  <p className="text-[var(--text-secondary)]">
-                    Your address verification details have been submitted for
-                    manual review.
-                  </p>
-                  <p className="text-[var(--text-tertiary)] text-sm">
-                    This process typically takes no less than 15 minutes. We'll
-                    notify you at{" "}
-                    <span className="font-medium text-[var(--text-secondary)]">
-                      {email}
-                    </span>{" "}
-                    once verification is complete.
-                  </p>
-                </div>
-                <Button onClick={() => router.push("/")} className="w-full">
-                  Return to Home
-                </Button>
+              <CardContent className="p-6 sm:p-8 text-center space-y-6">
+                {!stageComplete ? (
+                  <div className="space-y-6">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border-2 border-[var(--primary-teal)]/40">
+                      <div className="h-10 w-10 rounded-full border-2 border-transparent border-t-[var(--primary-teal)] border-r-[var(--primary-teal)] animate-spin" />
+                    </div>
+
+                    <div
+                      key={currentStage.label}
+                      className="space-y-2 animate-fade-in"
+                    >
+                      <h3 className="text-xl font-semibold text-[var(--text-primary)]">
+                        {currentStage.label}
+                      </h3>
+                      <p className="text-sm text-[var(--text-secondary)]">
+                        {currentStage.description}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="relative h-2 w-full overflow-hidden rounded-full bg-[var(--bg-secondary)]">
+                        <div
+                          className="absolute left-0 top-0 h-full rounded-full bg-[var(--primary-teal)] transition-all duration-700 ease-out"
+                          style={{ width: `${progressPercent}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-[var(--text-tertiary)]">
+                        Step{" "}
+                        {Math.min(
+                          progressStageIndex + 1,
+                          VERIFICATION_STAGES.length
+                        )}{" "}
+                        of {VERIFICATION_STAGES.length}
+                      </p>
+                    </div>
+
+                  </div>
+                ) : (
+                  <div className="space-y-6 animate-fade-in">
+                    <div className="relative mx-auto h-20 w-20">
+                      <div className="absolute inset-0 rounded-full bg-[var(--primary-teal)]/30 blur-xl animate-pulse" />
+                      <div className="relative flex h-full w-full items-center justify-center rounded-full bg-[var(--primary-teal)] text-white shadow-lg shadow-[var(--primary-teal)]/40">
+                        <svg
+                          className="h-10 w-10"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-semibold text-[var(--text-primary)]">
+                        Your verification has been successfully completed.
+                      </h3>
+                      <p className="text-sm text-[var(--text-secondary)]">
+                        A confirmation has been sent to{" "}
+                        <span className="font-medium text-[var(--text-primary)]">
+                          {email}
+                        </span>
+                        . You're all set.
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Button
+                        onClick={() => router.push("/")}
+                        className="w-full"
+                      >
+                        Return to Home
+                      </Button>
+                      <p className="text-xs text-[var(--text-tertiary)]">
+                        Need assistance? Our team is ready to help if you have
+                        any questions about your address validation.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

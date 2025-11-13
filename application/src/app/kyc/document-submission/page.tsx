@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import KYCLayout from "@/components/layouts/KYCLayout";
 import { useKYC, useKYCActions } from "@/contexts/KYCContext";
+import { useUtilLocation } from "@/contexts/UtilityContext";
 import { Upload } from "@aws-sdk/lib-storage";
 import axios from "axios";
 import { s3, BUCKET, PYTHON_BACKEND, REGION } from "@/lib/s3Config";
@@ -23,12 +24,12 @@ const DocumentSubmissionPage: React.FC = () => {
   const [uploadProgress, setUploadProgress] = useState<string>("");
   const [showConfidenceModal, setShowConfidenceModal] = useState(false);
   const [confidenceScore, setConfidenceScore] = useState<number>(0);
+  const { setUtilLocation } = useUtilLocation();
 
   const handleUtilityBillChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setUtilityBill(file);
-      setError("");
     }
   };
 
@@ -38,18 +39,7 @@ const DocumentSubmissionPage: React.FC = () => {
     const file = e.target.files?.[0];
     if (file) {
       setLocationHistory(file);
-      setError("");
     }
-  };
-
-  const handleAlternativeClick = () => {
-    setShowAlternative(true);
-    setError("");
-  };
-
-  const handleConfidenceModalTryInstead = () => {
-    setShowConfidenceModal(false);
-    router.push("/kyc/fallback-verification");
   };
 
   async function handleSubmit() {
@@ -67,7 +57,8 @@ const DocumentSubmissionPage: React.FC = () => {
     setUploadProgress("Preparing uploads...");
 
     try {
-      // ---------- Upload utility bill ----------
+      const userId = state.userData?._id || "";
+
       const safeBillName = utilityBill.name.replace(/\s+/g, "_");
       const billKey = `utility-bills/${Date.now()}-${safeBillName}`;
 
@@ -120,8 +111,6 @@ const DocumentSubmissionPage: React.FC = () => {
       // ---------- Call Python verification endpoint (JSON) ----------
       setUploadProgress("Verifying address with AI...");
 
-      const userId = state.userData?._id || "";
-
       const pythonResp = await axios.post(
         `${PYTHON_BACKEND}/api/proof-of-address`,
         {
@@ -146,7 +135,12 @@ const DocumentSubmissionPage: React.FC = () => {
         return;
       }
 
-      // ---------- Save verification data to backend ----------
+      setUtilLocation({
+        long: verificationData.utility_address.lng,
+        lat: verificationData.utility_address.lat,
+      });
+
+      // ---------- Save verification data to your backend (JSON) ----------
       setUploadProgress("Saving verification data...");
 
       const payload = {
@@ -177,8 +171,8 @@ const DocumentSubmissionPage: React.FC = () => {
         setError("Failed to save verification data. Please try again.");
       }
     } catch (err: any) {
-      console.error("Error uploading documents:", err);
-      setError(err?.message || "Failed to upload documents. Please try again.");
+      console.error("Error submitting documents:", err);
+      setError(err?.message || "Failed to submit documents. Please try again.");
     } finally {
       setLoading(false);
       setUploadProgress("");
@@ -189,14 +183,29 @@ const DocumentSubmissionPage: React.FC = () => {
     router.push("/kyc/face-capture");
   };
 
+  const handleHelp = () => {
+    console.log("Help clicked");
+  };
+
+  const handleAlternativeClick = () => {
+    // Branch to fallback flow page
+    router.push("/kyc/fallback-verification");
+  };
+
+  const handleConfidenceModalTryInstead = () => {
+    setShowConfidenceModal(false);
+    router.push("/kyc/fallback-verification");
+  };
+
   const isFormValid = utilityBill && (locationHistory || showAlternative);
 
   return (
     <KYCLayout
       currentStep={4}
-      totalSteps={8}
-      steps={["ID Info", "Address", "Face", "Capture", "Documents"]}
+      totalSteps={6}
+      steps={["ID Info", "Address", "Face", "Capture", "Documents", "Video"]}
       onBack={handleBack}
+      onHelp={handleHelp}
     >
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
@@ -429,7 +438,7 @@ const DocumentSubmissionPage: React.FC = () => {
           <Button
             size="lg"
             onClick={handleSubmit}
-            disabled={!isFormValid || loading}
+            disabled={!isFormValid}
             className="w-full"
             loading={loading}
           >

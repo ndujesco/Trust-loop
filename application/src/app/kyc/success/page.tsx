@@ -41,8 +41,8 @@ const KYCSuccessPage: React.FC = () => {
 
   return (
     <KYCLayout
-      currentStep={6}
-      totalSteps={6}
+      currentStep={8}
+      totalSteps={8}
       steps={["ID Info", "Address", "Face", "Capture", "Documents", "Video"]}
       onBack={handleBack}
       onHelp={handleHelp}
