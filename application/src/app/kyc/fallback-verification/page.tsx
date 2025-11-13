@@ -144,15 +144,14 @@ const FallbackVerificationPage: React.FC = () => {
   return (
     <KYCLayout
       currentStep={6}
-      totalSteps={8}
+      totalSteps={6}
       steps={[
         "ID Info",
         "Address",
         "Face",
         "Capture",
         "Documents",
-        "Video",
-        "Complete",
+        "Fallback Verification",
       ]}
       onBack={handleBack}
     >

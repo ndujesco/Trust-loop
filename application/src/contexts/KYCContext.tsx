@@ -68,6 +68,31 @@ export interface CurrentAddress {
   address: string;
 }
 
+export interface PepDetails {
+  politicalOffice: string;
+  state?: string;
+  startDate: string;
+  endDate?: string;
+  currentlyInOffice: boolean;
+}
+
+export interface RelatedPepDetails {
+  relationName: string;
+  relationship: string;
+  politicalOffice: string;
+  state?: string;
+  startDate: string;
+  endDate?: string;
+  currentlyInOffice: boolean;
+}
+
+export interface PepStatus {
+  isPep: boolean;
+  isRelatedToPep: boolean;
+  pepDetails: PepDetails | null;
+  relatedPepDetails: RelatedPepDetails | null;
+}
+
 export interface CapturedImage {
   dataUrl: string;
   timestamp: Date;
@@ -97,6 +122,7 @@ export interface KYCState {
   userData: UserData | null;
   personalDetails: Partial<PersonalDetails>;
   capturedImage: CapturedImage | null;
+  pepStatus: PepStatus | null;
 
   // Verification status
   verificationStatus: VerificationStatus;
@@ -118,6 +144,7 @@ type KYCAction =
   | { type: "SET_CAPTURED_IMAGE"; payload: CapturedImage }
   | { type: "SET_ADDRESS_PARTNERS"; payload: AddressPartners }
   | { type: "SET_CURRENT_ADDRESS"; payload: CurrentAddress }
+  | { type: "SET_PEP_STATUS"; payload: PepStatus }
   | { type: "SET_LOADING"; payload: boolean }
   | { type: "SET_ERROR"; payload: string | null }
   | { type: "RESET_KYC" };
@@ -133,6 +160,7 @@ const initialState: KYCState = {
     selected: [],
     verified: [],
   },
+  pepStatus: null,
   currentAddress: null,
   userData: null,
   verificationStatus: {
@@ -204,6 +232,12 @@ function kycReducer(state: KYCState, action: KYCAction): KYCState {
       return {
         ...state,
         currentAddress: action.payload,
+      };
+
+    case "SET_PEP_STATUS":
+      return {
+        ...state,
+        pepStatus: action.payload,
       };
 
     case "SET_VERIFICATION_STATUS":
@@ -292,6 +326,9 @@ export function useKYCActions() {
 
     setCurrentAddress: (address: CurrentAddress) =>
       dispatch({ type: "SET_CURRENT_ADDRESS", payload: address }),
+
+    setPepStatus: (status: PepStatus) =>
+      dispatch({ type: "SET_PEP_STATUS", payload: status }),
 
     setVerificationStatus: (status: Partial<VerificationStatus>) =>
       dispatch({ type: "SET_VERIFICATION_STATUS", payload: status }),
