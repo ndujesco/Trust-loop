@@ -7,15 +7,18 @@ import { Card, CardContent } from "@/components/ui/Card";
 import KYCLayout from "@/components/layouts/KYCLayout";
 import RegulatoryFooter from "@/components/RegulatoryFooter";
 import ClientOnly from "@/components/ClientOnly";
+import { useKYC } from "@/contexts/KYCContext";
 
 const KYCSuccessPage: React.FC = () => {
-  const router = useRouter();
+  const router = useRouter()
   const [showAnimation, setShowAnimation] = useState(false);
   const [verificationId, setVerificationId] = useState<string>("");
+  const { state } = useKYC();
+  
 
   useEffect(() => {
     // Generate verification ID on client side only
-    setVerificationId(`KYC-${Date.now().toString().slice(-8)}`);
+    setVerificationId(`KYC-${state.userData?.verificationId}`);
 
     // Trigger animation after component mounts
     setTimeout(() => setShowAnimation(true), 100);
