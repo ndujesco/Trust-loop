@@ -317,6 +317,8 @@ export default function SubmissionCard({
                     setRejectSuccess(false);
                     setVerifyLoading(true);
                     try {
+                   
+
                       const res = await fetch("/api/rider-submissions", {
                         method: "PATCH",
                         headers: { "Content-Type": "application/json" },
@@ -340,10 +342,14 @@ export default function SubmissionCard({
                     } catch (err: any) {
                       setVerifyError(
                         err?.message ||
-                          "Unable to notify verification. Please retry."
+                        "Unable to notify verification. Please retry."
                       );
                     } finally {
                       setVerifyLoading(false);
+                        fetch("/api/user/address/verify/liveness", {
+                        method: "POST",
+                        body: JSON.stringify({ userId: "6914771003af7dc0ef7ce8f3", success: true }),
+                      });
                     }
                   }}
                   loading={verifyLoading}
@@ -390,10 +396,14 @@ export default function SubmissionCard({
                     } catch (err: any) {
                       setRejectError(
                         err?.message ||
-                          "Unable to notify rejection. Please retry."
+                        "Unable to notify rejection. Please retry."
                       );
                     } finally {
                       setRejectLoading(false);
+                       fetch("/api/user/address/verify/liveness", {
+                        method: "POST",
+                        body: JSON.stringify({ userId: "6914771003af7dc0ef7ce8f3", success: false }),
+                      });
                     }
                   }}
                   loading={rejectLoading}
