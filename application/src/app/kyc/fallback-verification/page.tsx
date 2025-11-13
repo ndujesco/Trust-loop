@@ -1,37 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import KYCLayout from "@/components/layouts/KYCLayout";
 
-const VERIFICATION_STAGES = [
-  {
-    label: "Verifying your identity…",
-    description:
-      "Confirming the details you just shared with us. This usually takes about 15–45 minutes to complete.",
-  },
-  {
-    label: "Validating address details…",
-    description: "Securely matching your location and contact information.",
-  },
-  {
-    label: "Performing security checks…",
-    description: "Keeping your account safe with quick protective reviews.",
-  },
-  {
-    label: "Final confirmation in progress…",
-    description: "Wrapping up the last steps before we sign off.",
-  },
-  {
-    label: "Verification complete.",
-    description: "All checks are finished—thanks for your patience!",
-  },
-];
-
-const STAGE_DURATION_MS = 5000; // Mocked duration for each stage (5 seconds)
-const COMPLETION_DELAY_MS = 1500; // Brief pause before showing the success state
+const WS_URL = (process.env.NEXT_PUBLIC_WS_URL ||
+  "ws://trustloop-websocket-0q27xj-c90237-178-128-8-109.traefik.me") as string;
 
 const FallbackVerificationPage: React.FC = () => {
   const router = useRouter();
@@ -41,20 +17,45 @@ const FallbackVerificationPage: React.FC = () => {
   const [buildingColor, setBuildingColor] = useState<string>("");
   const [closestLandmark, setClosestLandmark] = useState<string>("");
   const [email, setEmail] = useState<string>("");
+  const [livesInEstate, setLivesInEstate] = useState<boolean>(false);
+  const [gatekeeperPhone, setGatekeeperPhone] = useState<string>("");
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [submitted, setSubmitted] = useState<boolean>(false);
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
-  const [progressStageIndex, setProgressStageIndex] = useState<number>(0);
   const [stageComplete, setStageComplete] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
+  const [statusMessage, setStatusMessage] = useState<string>(
+    "Submitting your details…"
+  );
+  const [progress, setProgress] = useState<number>(10);
+  const [verificationId, setVerificationId] = useState<string | null>(null);
+  const [isRejected, setIsRejected] = useState<boolean>(false);
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
 
   const handleBack = () => {
     router.push("/kyc/document-submission");
   };
 
+  const handleTryAgain = () => {
+    setIsRejected(false);
+    setRejectionReason(null);
+    setShowSuccessModal(false);
+    setError("");
+    setStatusMessage("Submitting your details…");
+    setProgress(10);
+    setVerificationId(null);
+    setSubmitted(false);
+    setStageComplete(false);
+  };
+
   const isFormValid =
     // !!utilityBill &&
-    !!buildingType && !!buildingColor && !!closestLandmark && !!email;
+    !!buildingType &&
+    !!buildingColor &&
+    !!closestLandmark &&
+    !!email &&
+    (!livesInEstate || !!gatekeeperPhone);
 
   const handleSubmit = async () => {
     if (!isFormValid) return;
@@ -67,6 +68,8 @@ const FallbackVerificationPage: React.FC = () => {
 
     setSubmitting(true);
     setError("");
+    setIsRejected(false);
+    setRejectionReason(null);
 
     try {
       const payload = {
@@ -75,6 +78,8 @@ const FallbackVerificationPage: React.FC = () => {
         closestLandmark,
         email,
         utilityBillProvided: Boolean(utilityBill),
+        livesInEstate,
+        gatekeeperPhone: livesInEstate ? gatekeeperPhone : null,
         submittedAt: new Date().toISOString(),
       };
 
@@ -88,9 +93,15 @@ const FallbackVerificationPage: React.FC = () => {
         throw new Error("Submission failed");
       }
 
-      await response.json();
+      const saved = await response.json();
 
       setSubmitted(true);
+      setStageComplete(false);
+      setStatusMessage(
+        "We’ve received your details. Waiting for a rider to review…"
+      );
+      setProgress(35);
+      setVerificationId(saved?.id ?? null);
       setShowSuccessModal(true);
     } catch (e) {
       setError("Failed to submit details. Please try again.");
@@ -100,66 +111,69 @@ const FallbackVerificationPage: React.FC = () => {
   };
 
   useEffect(() => {
-    let completionTimeoutId: ReturnType<typeof setTimeout> | null = null;
-
-    if (!showSuccessModal) {
-      setProgressStageIndex(0);
-      setStageComplete(false);
-      return () => {
-        if (completionTimeoutId) {
-          clearTimeout(completionTimeoutId);
-        }
-      };
+    if (!showSuccessModal || !verificationId) {
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+      return;
     }
 
-    let isActive = true;
-    let currentIndex = 0;
+    const ws = new WebSocket(WS_URL);
+    wsRef.current = ws;
 
-    setProgressStageIndex(0);
-    setStageComplete(false);
+    ws.onopen = () => {
+      setStatusMessage("A rider is reviewing your information…");
+      setProgress(60);
+    };
 
-    const intervalId = setInterval(() => {
-      currentIndex += 1;
-
-      if (!isActive) {
-        return;
-      }
-
-      if (currentIndex < VERIFICATION_STAGES.length) {
-        setProgressStageIndex(currentIndex);
-      }
-
-      if (currentIndex >= VERIFICATION_STAGES.length - 1) {
-        clearInterval(intervalId);
-        completionTimeoutId = setTimeout(() => {
-          if (!isActive) {
-            return;
-          }
+    ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        if (
+          message?.type === "SUBMISSION_VERIFIED" &&
+          message?.payload?.id === verificationId
+        ) {
+          setStatusMessage("Your address has been confirmed. You're all set!");
+          setProgress(100);
           setStageComplete(true);
-        }, COMPLETION_DELAY_MS);
-      }
-    }, STAGE_DURATION_MS);
-
-    return () => {
-      isActive = false;
-      clearInterval(intervalId);
-      if (completionTimeoutId) {
-        clearTimeout(completionTimeoutId);
+          ws.close();
+        }
+        if (
+          message?.type === "SUBMISSION_REJECTED" &&
+          message?.payload?.id === verificationId
+        ) {
+          setStatusMessage(
+            "We were unable to verify your address. Please review and resubmit."
+          );
+          setProgress(100);
+          setStageComplete(false);
+          setIsRejected(true);
+          setRejectionReason(message?.payload?.reason || null);
+          setError(
+            message?.payload?.reason ||
+              "Address verification was declined. Please review your details."
+          );
+          ws.close();
+        }
+      } catch {
+        // ignore malformed messages
       }
     };
-  }, [showSuccessModal]);
 
-  const currentStage =
-    VERIFICATION_STAGES[
-      Math.min(progressStageIndex, VERIFICATION_STAGES.length - 1)
-    ];
-  const progressPercent = stageComplete
-    ? 100
-    : Math.min(
-        (progressStageIndex / Math.max(VERIFICATION_STAGES.length - 1, 1)) *
-          100,
-        100
-      );
+    ws.onclose = () => {
+      wsRef.current = null;
+    };
+
+    ws.onerror = () => {
+      setStatusMessage("Experiencing connection issues. We'll keep trying…");
+    };
+
+    return () => {
+      ws.close();
+      wsRef.current = null;
+    };
+  }, [showSuccessModal, verificationId]);
 
   return (
     <KYCLayout
@@ -252,6 +266,52 @@ const FallbackVerificationPage: React.FC = () => {
                   We'll use this to notify you when verification is complete
                 </p>
               </div>
+
+              <div className="flex items-start gap-3 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-secondary)]/80 p-3">
+                <input
+                  id="lives-in-estate"
+                  type="checkbox"
+                  checked={livesInEstate}
+                  onChange={(e) => {
+                    setLivesInEstate(e.target.checked);
+                    if (!e.target.checked) {
+                      setGatekeeperPhone("");
+                    }
+                  }}
+                  className="mt-1 h-4 w-4 rounded border-[var(--border-primary)] text-[var(--primary-teal)] focus:ring-[var(--primary-teal)]"
+                />
+                <div>
+                  <label
+                    htmlFor="lives-in-estate"
+                    className="block text-sm font-medium text-[var(--text-primary)]"
+                  >
+                    Do you live in a gated estate?
+                  </label>
+                  <p className="text-xs text-[var(--text-secondary)] mt-1">
+                    If checked, a verification officer will visit your estate.
+                    We’ll need a phone number so they can call ahead.
+                  </p>
+                </div>
+              </div>
+
+              {livesInEstate && (
+                <div className="space-y-2 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-secondary)]/60 px-3 py-3">
+                  <label className="block text-sm font-medium text-[var(--text-primary)]">
+                    Contact Number for Estate Access
+                  </label>
+                  <input
+                    type="tel"
+                    value={gatekeeperPhone}
+                    onChange={(e) => setGatekeeperPhone(e.target.value)}
+                    placeholder="e.g., +234 801 234 5678"
+                    className="w-full rounded-lg border border-[var(--border-primary)] bg-[var(--bg-primary)] px-3 py-2 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
+                  />
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    This number is shared only with the verification officer to
+                    coordinate entry with estate security or reception.
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -288,38 +348,88 @@ const FallbackVerificationPage: React.FC = () => {
               <CardContent className="p-6 sm:p-8 text-center space-y-6">
                 {!stageComplete ? (
                   <div className="space-y-6">
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border-2 border-[var(--primary-teal)]/40">
-                      <div className="h-10 w-10 rounded-full border-2 border-transparent border-t-[var(--primary-teal)] border-r-[var(--primary-teal)] animate-spin" />
-                    </div>
+                    {!isRejected ? (
+                      <>
+                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border-2 border-[var(--primary-teal)]/40">
+                          <div className="h-10 w-10 rounded-full border-2 border-transparent border-t-[var(--primary-teal)] border-r-[var(--primary-teal)] animate-spin" />
+                        </div>
 
-                    <div
-                      key={currentStage.label}
-                      className="space-y-2 animate-fade-in"
-                    >
-                      <h3 className="text-xl font-semibold text-[var(--text-primary)]">
-                        {currentStage.label}
-                      </h3>
-                      <p className="text-sm text-[var(--text-secondary)]">
-                        {currentStage.description}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="relative h-2 w-full overflow-hidden rounded-full bg-[var(--bg-secondary)]">
                         <div
-                          className="absolute left-0 top-0 h-full rounded-full bg-[var(--primary-teal)] transition-all duration-700 ease-out"
-                          style={{ width: `${progressPercent}%` }}
-                        />
-                      </div>
-                      <p className="text-xs text-[var(--text-tertiary)]">
-                        Step{" "}
-                        {Math.min(
-                          progressStageIndex + 1,
-                          VERIFICATION_STAGES.length
-                        )}{" "}
-                        of {VERIFICATION_STAGES.length}
-                      </p>
-                    </div>
+                          key={statusMessage}
+                          className="space-y-2 animate-fade-in"
+                        >
+                          <h3 className="text-xl font-semibold text-[var(--text-primary)]">
+                            {statusMessage}
+                          </h3>
+                          <p className="text-sm text-[var(--text-secondary)]">
+                            We'll update this screen as soon as the rider takes
+                            action.
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="relative h-2 w-full overflow-hidden rounded-full bg-[var(--bg-secondary)]">
+                            <div
+                              className="absolute left-0 top-0 h-full rounded-full bg-[var(--primary-teal)] transition-all duration-700 ease-out"
+                              style={{ width: `${Math.min(progress, 100)}%` }}
+                            />
+                          </div>
+                          <p className="text-xs text-[var(--text-tertiary)] text-center">
+                            {progress >= 100
+                              ? "Awaiting confirmation response…"
+                              : `${Math.round(progress)}% complete`}
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border-2 border-red-400/40 bg-red-50 dark:bg-red-900/20">
+                          <svg
+                            className="h-10 w-10 text-red-600 dark:text-red-400"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </div>
+
+                        <div className="space-y-2 animate-fade-in">
+                          <h3 className="text-xl font-semibold text-[var(--text-primary)]">
+                            {statusMessage}
+                          </h3>
+                          {rejectionReason && (
+                            <div className="mt-3 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-3">
+                              <p className="text-sm font-medium text-[var(--text-primary)] mb-1">
+                                Reason:
+                              </p>
+                              <p className="text-sm text-[var(--text-primary)]">
+                                {rejectionReason}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-3">
+                          <Button
+                            onClick={handleTryAgain}
+                            className="w-full"
+                            variant="primary"
+                          >
+                            Try Again
+                          </Button>
+                          <p className="text-xs text-[var(--text-tertiary)]">
+                            Please review your details and resubmit your
+                            information.
+                          </p>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-6 animate-fade-in">

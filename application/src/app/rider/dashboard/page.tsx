@@ -4,6 +4,8 @@ import React, { useEffect, useRef, useState } from "react";
 import SubmissionCard from "@/components/SubmissionCard";
 import ConnectionIndicator from "@/components/ConnectionIndicator";
 
+type SubmissionStatus = "pending" | "verified" | "rejected";
+
 type Submission = {
   id: string;
   buildingType: string;
@@ -12,10 +14,16 @@ type Submission = {
   email: string;
   utilityBillProvided: boolean;
   submittedAt: string;
+  status: SubmissionStatus;
+  verifiedAt: string | null;
+  rejectedAt: string | null;
+  rejectionReason: string | null;
+  livesInEstate?: boolean;
+  gatekeeperPhone?: string | null;
 };
 
 const WS_URL = (process.env.NEXT_PUBLIC_WS_URL ||
-  "ws://localhost:4001") as string;
+  "ws://trustloop-websocket-0q27xj-c90237-178-128-8-109.traefik.me") as string; 
 
 export default function RiderDashboardPage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -59,8 +67,56 @@ export default function RiderDashboardPage() {
           if (msg?.type === "NEW_SUBMISSION") {
             const payload = msg.payload as Submission;
             setSubmissions((prev) => [payload, ...prev]);
-            // Optionally: add a transient highlight state to the new card
+            return;
           }
+
+          if (msg?.type === "SUBMISSION_VERIFIED") {
+            const payload = msg.payload as {
+              id: string;
+              verifiedAt?: string;
+            };
+            if (payload?.id) {
+              setSubmissions((prev) =>
+                prev.map((item) =>
+                  item.id === payload.id
+                    ? {
+                        ...item,
+                        status: "verified",
+                        verifiedAt: payload.verifiedAt ?? new Date().toISOString(),
+                        rejectedAt: null,
+                        rejectionReason: null,
+                      }
+                    : item
+                )
+              );
+            }
+            return;
+          }
+
+          if (msg?.type === "SUBMISSION_REJECTED") {
+            const payload = msg.payload as {
+              id: string;
+              rejectedAt?: string;
+              reason?: string;
+            };
+            if (payload?.id) {
+              setSubmissions((prev) =>
+                prev.map((item) =>
+                  item.id === payload.id
+                    ? {
+                        ...item,
+                        status: "rejected",
+                        rejectedAt: payload.rejectedAt ?? new Date().toISOString(),
+                        rejectionReason: payload.reason ?? item.rejectionReason,
+                        verifiedAt: null,
+                      }
+                    : item
+                )
+              );
+            }
+            return;
+          }
+
           if (msg?.type === "WS_CONNECTED") {
             // ignore
           }

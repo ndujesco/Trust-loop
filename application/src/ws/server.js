@@ -1,25 +1,27 @@
-/**
- * src/ws/server.js
- *
- * Local mock WebSocket server + small HTTP /broadcast endpoint.
- * - Run with: npm run ws
- * - Broadcast format: { type: 'NEW_SUBMISSION', payload: {...} }
- *
- * NOTE: This is a local dev/mock server. Replace with production pub/sub in real deployments.
- */
-
-const http = require("http");
-const WebSocket = require("ws");
+import http from "http";
+import { WebSocketServer, WebSocket } from "ws";
 
 const PORT = process.env.WS_PORT || 4001;
+
 const server = http.createServer((req, res) => {
+  // Add CORS headers for all requests
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  // Handle preflight
+  if (req.method === "OPTIONS") {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
   if (req.method === "POST" && req.url === "/broadcast") {
     let body = "";
     req.on("data", (chunk) => (body += chunk));
     req.on("end", () => {
       try {
         const msg = JSON.parse(body);
-        // Broadcast to all connected WS clients
         wss.clients.forEach((client) => {
           if (client.readyState === WebSocket.OPEN) {
             client.send(JSON.stringify(msg));
@@ -36,7 +38,6 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // basic health endpoint
   if (req.method === "GET" && req.url === "/") {
     res.writeHead(200, { "Content-Type": "text/plain" });
     res.end("local ws server ok");
@@ -47,9 +48,9 @@ const server = http.createServer((req, res) => {
   res.end();
 });
 
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocketServer({ server });
 
-wss.on("connection", (socket, req) => {
+wss.on("connection", (socket) => {
   const id = Math.random().toString(36).slice(2, 9);
   console.log(`[ws] client connected (${id})`);
   socket.send(JSON.stringify({ type: "WS_CONNECTED", payload: { id } }));
@@ -59,7 +60,6 @@ wss.on("connection", (socket, req) => {
   });
 
   socket.on("message", (message) => {
-    // For debugging if browser client sends anything
     console.log(`[ws] received from client (${id}):`, message.toString());
   });
 });
