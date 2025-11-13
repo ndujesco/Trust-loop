@@ -1364,7 +1364,7 @@ const VideoVerificationPage: React.FC = () => {
               className="w-full"
               loading={loading}
             >
-              Submit Video
+              {loading ? "Saving..." : "Save & Submit"}
             </Button>
           </div>
         )}
@@ -1980,8 +1980,9 @@ const VideoVerificationPage: React.FC = () => {
                         URL.revokeObjectURL(recordedVideoUrl);
                         setRecordedVideoUrl("");
                       }
+                      handleSubmit();
                       // Navigate to success page
-                      router.push("/kyc/success");
+                      // router.push("/kyc/success");
                     }}
                     className="flex-1"
                     disabled={!analysisComplete}
