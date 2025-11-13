@@ -59,7 +59,6 @@ const FallbackVerificationPage: React.FC = () => {
   const handleSubmit = async () => {
     if (!isFormValid) return;
 
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError("Please enter a valid email address.");
@@ -68,9 +67,30 @@ const FallbackVerificationPage: React.FC = () => {
 
     setSubmitting(true);
     setError("");
+
     try {
-      // For now, we only show an in-progress message.
-      await new Promise((r) => setTimeout(r, 800));
+      const payload = {
+        buildingType,
+        buildingColor,
+        closestLandmark,
+        email,
+        utilityBillProvided: Boolean(utilityBill),
+        submittedAt: new Date().toISOString(),
+      };
+
+      const response = await fetch("/api/rider-submissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error("Submission failed");
+      }
+
+      await response.json();
+
+      setSubmitted(true);
       setShowSuccessModal(true);
     } catch (e) {
       setError("Failed to submit details. Please try again.");
@@ -300,7 +320,6 @@ const FallbackVerificationPage: React.FC = () => {
                         of {VERIFICATION_STAGES.length}
                       </p>
                     </div>
-
                   </div>
                 ) : (
                   <div className="space-y-6 animate-fade-in">
