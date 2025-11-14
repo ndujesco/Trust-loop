@@ -113,39 +113,38 @@ export default function SubmissionCard({
 
   return (
     <div className="p-4 bg-white dark:bg-primary-teal rounded-lg shadow-sm border border-[var(--border-primary)]">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h3 className="text-lg font-semibold text-white">
-              {submission.buildingType}
-            </h3>
-            <span className="text-xs text-white/80">• {shortTs}</span>
-          </div>
+   <div className="flex items-start justify-between gap-4">
+  <div>
+    <div className="flex items-center gap-2">
+      <h3 className="text-lg font-semibold text-[var(--text-primary)]">
+        {submission.buildingType}
+      </h3>
+      <span className="text-xs text-[var(--text-secondary)]">• {shortTs}</span>
+    </div>
 
-          <p className="mt-2 text-sm text-white/90">
-            {submission.buildingColor} — {submission.closestLandmark}
-          </p>
+    <p className="mt-2 text-sm text-[var(--text-primary)]">
+      {submission.buildingColor} — {submission.closestLandmark}
+    </p>
 
-          <p className="mt-3 text-xs text-white/70">
-            {maskEmail(submission.email)} •{" "}
-            {submission.utilityBillProvided
-              ? "Utility bill provided"
-              : "No bill"}
-          </p>
-        </div>
+    <p className="mt-3 text-xs text-[var(--text-secondary)]">
+      {maskEmail(submission.email)} •{" "}
+      {submission.utilityBillProvided ? "Utility bill provided" : "No bill"}
+    </p>
+  </div>
 
-        <div className="flex flex-col items-end gap-2 text-right">
-          {renderStatusBadge()}
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setOpen(true)}
-            className="rounded-md border border-white/60 bg-white/90 px-4 py-1 text-xs font-medium text-[var(--primary-teal)] shadow-sm transition hover:border-white hover:bg-white hover:text-[var(--primary-teal-dark)]"
-          >
-            View
-          </Button>
-        </div>
-      </div>
+  <div className="flex flex-col items-end gap-2 text-right">
+    {renderStatusBadge()}
+    <Button
+      variant="secondary"
+      size="sm"
+      onClick={() => setOpen(true)}
+      className="rounded-md border border-white/60 bg-white/90 px-4 py-1 text-xs font-medium text-[var(--primary-teal)] shadow-sm transition hover:border-white hover:bg-white hover:text-[var(--primary-teal-dark)]"
+    >
+      View
+    </Button>
+  </div>
+</div>
+
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
           <div className="flex h-[80vh] max-h-[80vh] w-full max-w-lg flex-col rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-primary)] shadow-xl">

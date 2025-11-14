@@ -16,7 +16,7 @@ declare global {
 }
 
 // Location verification threshold in meters
-const LOCATION_VERIFICATION_THRESHOLD_METERS = 500;
+const LOCATION_VERIFICATION_THRESHOLD_METERS = parseInt(process.env.NEXT_PUBLIC_DISTANCE_THRESHOLD || "500");
 
 const VideoVerificationPage: React.FC = () => {
   const router = useRouter();
