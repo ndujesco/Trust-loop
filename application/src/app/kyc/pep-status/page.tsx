@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import KYCLayout from "@/components/layouts/KYCLayout";
 import { useKYC, useKYCActions, PepStatus } from "@/contexts/KYCContext";
+import ConsentModal from "@/components/ConsentModal";
 
 const PepStatusPage: React.FC = () => {
   const router = useRouter();
@@ -16,6 +17,7 @@ const PepStatusPage: React.FC = () => {
   const [isRelatedToPep, setIsRelatedToPep] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showConsent, setShowConsent] = useState(false);
 
   const handleContinue = async () => {
     if (isPep === null || isRelatedToPep === null) {
@@ -42,8 +44,8 @@ const PepStatusPage: React.FC = () => {
         // User needs to provide PEP information
         router.push("/kyc/pep-information");
       } else {
-        // User is not a PEP, proceed to document submission
-        router.push("/kyc/document-submission");
+        // User is not a PEP, show consent modal before proceeding to document submission
+        setShowConsent(true);
       }
     } catch (err) {
       console.error("Error saving PEP status:", err);
@@ -51,6 +53,19 @@ const PepStatusPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleConsentConfirm = () => {
+    // Persist consent flag in sessionStorage for this session so we don't show repeatedly
+    try {
+      sessionStorage.setItem("kycConsentGiven", "true");
+    } catch (e) {
+      // ignore storage errors
+    }
+
+    setShowConsent(false);
+    // Navigate to document submission
+    router.push("/kyc/document-submission");
   };
 
   return (
@@ -210,6 +225,12 @@ const PepStatusPage: React.FC = () => {
             {loading ? "Processing..." : "Continue"}
           </Button>
         </div>
+        {/* Consent modal shown when user is not a PEP and attempts to continue */}
+        <ConsentModal
+          open={showConsent}
+          onConfirm={handleConsentConfirm}
+          onClose={() => setShowConsent(false)}
+        />
       </div>
     </KYCLayout>
   );

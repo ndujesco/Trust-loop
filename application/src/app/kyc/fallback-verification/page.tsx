@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import KYCLayout from "@/components/layouts/KYCLayout";
+import ConsentModal from "@/components/ConsentModal";
 
 const WS_URL = (process.env.NEXT_PUBLIC_WS_URL ||
   "wss://ws.alfredemmanuel.com/") as string;
@@ -22,6 +23,7 @@ const FallbackVerificationPage: React.FC = () => {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [submitted, setSubmitted] = useState<boolean>(false);
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
+  const [showHouseConsent, setShowHouseConsent] = useState<boolean>(false);
   const [stageComplete, setStageComplete] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const [statusMessage, setStatusMessage] = useState<string>(
@@ -111,6 +113,17 @@ const FallbackVerificationPage: React.FC = () => {
   };
 
   useEffect(() => {
+    // Show consent modal on page load unless consent already given in this session
+    try {
+      const given = sessionStorage.getItem("kycHouseDetailsConsentGiven");
+      if (!given) {
+        setShowHouseConsent(true);
+      }
+    } catch (e) {
+      // ignore storage errors and still show the modal
+      setShowHouseConsent(true);
+    }
+
     if (!showSuccessModal || !verificationId) {
       if (wsRef.current) {
         wsRef.current.close();
@@ -174,6 +187,21 @@ const FallbackVerificationPage: React.FC = () => {
       wsRef.current = null;
     };
   }, [showSuccessModal, verificationId]);
+
+  const handleHouseConsentConfirm = () => {
+    try {
+      sessionStorage.setItem("kycHouseDetailsConsentGiven", "true");
+    } catch (e) {
+      // ignore
+    }
+
+    setShowHouseConsent(false);
+  };
+
+  const handleHouseConsentClose = () => {
+    // If user does not consent, navigate back to previous page
+    router.back();
+  };
 
   return (
     <KYCLayout
@@ -327,6 +355,35 @@ const FallbackVerificationPage: React.FC = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Consent modal shown on page load for house details */}
+        <ConsentModal
+          open={showHouseConsent}
+          onConfirm={handleHouseConsentConfirm}
+          onClose={handleHouseConsentClose}
+          title={"TrustLoop Data Consent Notice"}
+        >
+          <p className="text-sm text-[var(--text-primary)] mb-4">
+            To complete your address verification, we may need a few additional
+            details about your residence — such as building type, colour,
+            landmarks, or other descriptive information.
+          </p>
+
+          <div className="text-sm text-[var(--text-primary)] space-y-2 mb-4">
+            <p>
+              These details will be used only for this verification process and
+              will not be stored, reused, or shared for any other purpose. Once
+              the verification is complete, this information is automatically
+              deleted, in line with data-minimisation requirements.
+            </p>
+
+            <p className="mt-2">
+              By clicking “Yes”, you consent to TrustLoop processing these house
+              details solely for the purpose of completing your KYC address
+              verification.
+            </p>
+          </div>
+        </ConsentModal>
 
         {/* Submit Button */}
         <div className="pt-2">
