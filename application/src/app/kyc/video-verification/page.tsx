@@ -868,7 +868,7 @@ const VideoVerificationPage: React.FC = () => {
   const initializeCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user" },
+        video: { facingMode: "environment" },
         audio: true,
       });
 
