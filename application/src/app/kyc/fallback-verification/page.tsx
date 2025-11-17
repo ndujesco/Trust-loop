@@ -18,8 +18,8 @@ const FallbackVerificationPage: React.FC = () => {
   const [buildingColor, setBuildingColor] = useState<string>("");
   const [closestLandmark, setClosestLandmark] = useState<string>("");
   const [email, setEmail] = useState<string>("");
-  const [livesInEstate, setLivesInEstate] = useState<boolean>(false);
-  const [gatekeeperPhone, setGatekeeperPhone] = useState<string>("");
+  // const [livesInEstate, setLivesInEstate] = useState<boolean>(false);
+  // const [gatekeeperPhone, setGatekeeperPhone] = useState<string>("");
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [submitted, setSubmitted] = useState<boolean>(false);
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
@@ -56,8 +56,7 @@ const FallbackVerificationPage: React.FC = () => {
     !!buildingType &&
     !!buildingColor &&
     !!closestLandmark &&
-    !!email &&
-    (!livesInEstate || !!gatekeeperPhone);
+    !!email ;
 
   const handleSubmit = async () => {
     if (!isFormValid) return;
@@ -80,8 +79,6 @@ const FallbackVerificationPage: React.FC = () => {
         closestLandmark,
         email,
         utilityBillProvided: Boolean(utilityBill),
-        livesInEstate,
-        gatekeeperPhone: livesInEstate ? gatekeeperPhone : null,
         submittedAt: new Date().toISOString(),
       };
 
@@ -295,51 +292,8 @@ const FallbackVerificationPage: React.FC = () => {
                 </p>
               </div>
 
-              <div className="flex items-start gap-3 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-secondary)]/80 p-3">
-                <input
-                  id="lives-in-estate"
-                  type="checkbox"
-                  checked={livesInEstate}
-                  onChange={(e) => {
-                    setLivesInEstate(e.target.checked);
-                    if (!e.target.checked) {
-                      setGatekeeperPhone("");
-                    }
-                  }}
-                  className="mt-1 h-4 w-4 rounded border-[var(--border-primary)] text-[var(--primary-teal)] focus:ring-[var(--primary-teal)]"
-                />
-                <div>
-                  <label
-                    htmlFor="lives-in-estate"
-                    className="block text-sm font-medium text-[var(--text-primary)]"
-                  >
-                    Do you live in a gated estate?
-                  </label>
-                  <p className="text-xs text-[var(--text-secondary)] mt-1">
-                    If checked, a verification officer will visit your estate.
-                    We’ll need a phone number so they can call ahead.
-                  </p>
-                </div>
-              </div>
-
-              {livesInEstate && (
-                <div className="space-y-2 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-secondary)]/60 px-3 py-3">
-                  <label className="block text-sm font-medium text-[var(--text-primary)]">
-                    Contact Number for Estate Access
-                  </label>
-                  <input
-                    type="tel"
-                    value={gatekeeperPhone}
-                    onChange={(e) => setGatekeeperPhone(e.target.value)}
-                    placeholder="e.g., +234 801 234 5678"
-                    className="w-full rounded-lg border border-[var(--border-primary)] bg-[var(--bg-primary)] px-3 py-2 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
-                  />
-                  <p className="text-xs text-[var(--text-secondary)]">
-                    This number is shared only with the verification officer to
-                    coordinate entry with estate security or reception.
-                  </p>
-                </div>
-              )}
+    
+        
             </div>
           </CardContent>
         </Card>
