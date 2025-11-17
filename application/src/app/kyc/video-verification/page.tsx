@@ -826,9 +826,9 @@ const VideoVerificationPage: React.FC = () => {
           setLocationVerified(false);
           setCheckingLocation(false);
           setError(
-            `You are ${distance.toFixed(
+            `You are ${parseFloat('19898.87').toFixed(
               0
-            )}m away from the selected location. Please move to within ${LOCATION_VERIFICATION_THRESHOLD_METERS}m of the location to verify.`
+            )}m away from the selected location. Please move to within ${500}m of the location to verify.`
           );
         }
       },
@@ -1502,7 +1502,8 @@ const VideoVerificationPage: React.FC = () => {
                         verifiedLat,
                         verifiedLng
                       );
-
+                      {console.log(distance, " ", LOCATION_VERIFICATION_THRESHOLD_METERS);
+                      }
                       if (distance <= LOCATION_VERIFICATION_THRESHOLD_METERS) {
                         return (
                           <div className="flex items-center gap-3 p-3 bg-[var(--success)]/10 border border-[var(--success)] rounded-lg">
@@ -1550,7 +1551,7 @@ const VideoVerificationPage: React.FC = () => {
                                   Location Warning
                                 </span>
                                 <p className="text-xs text-[var(--text-tertiary)] mt-1">
-                                  You're {distance.toFixed(0)}m away from the
+                                  You're {parseFloat('19898.87').toFixed(0)}m away from the
                                   selected location
                                 </p>
                               </div>

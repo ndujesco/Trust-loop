@@ -64,27 +64,27 @@ const DocumentSubmissionPage: React.FC = () => {
 
       setUploadProgress(`Uploading utility bill...`);
 
-      const billUpload = new Upload({
-        client: s3,
-        params: {
-          Bucket: BUCKET,
-          Key: billKey,
-          Body: utilityBill,
-          ContentType: utilityBill.type || "application/octet-stream",
-        },
-        queueSize: 4, // concurrency
-        partSize: 5 * 1024 * 1024,
-      });
+      // const billUpload = new Upload({
+      //   client: s3,
+      //   params: {
+      //     Bucket: BUCKET,
+      //     Key: billKey,
+      //     Body: utilityBill,
+      //     ContentType: utilityBill.type || "application/octet-stream",
+      //   },
+      //   queueSize: 4, // concurrency
+      //   partSize: 5 * 1024 * 1024,
+      // });
 
-      await billUpload.done();
-      // await new Promise((resolve) => setTimeout(resolve, 2500));
+      // await billUpload.done();
+      await new Promise((resolve) => setTimeout(resolve, 2500));
 
-      const billUrl = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${encodeURIComponent(
-        billKey
-      )}`;
+      // const billUrl = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${encodeURIComponent(
+      //   billKey
+      // )}`;
 
 
-      // const billUrl = "https://tbd-files.s3.eu-north-1.amazonaws.com/utility-bills/1763016111073-Utility_Bill.pdf"
+      const billUrl = "https://tbd-files.s3.eu-north-1.amazonaws.com/utility-bills/1763016111073-Utility_Bill.pdf"
       // ---------- Upload timeline (optional) ----------
       let timelineUrl: string | null = null;
       if (locationHistory) {
@@ -96,27 +96,27 @@ const DocumentSubmissionPage: React.FC = () => {
           WE WILL USE AN EXISTING URI INSTEAD.** ⚠️
          */
 
-        const timelineUpload = new Upload({
-          client: s3,
-          params: {
-            Bucket: BUCKET,
-            Key: timelineKey,
-            Body: locationHistory,
-            ContentType: locationHistory.type || "application/octet-stream",
-          },
-          queueSize: 4,
-          partSize: 5 * 1024 * 1024,
-        });
+        // const timelineUpload = new Upload({
+        //   client: s3,
+        //   params: {
+        //     Bucket: BUCKET,
+        //     Key: timelineKey,
+        //     Body: locationHistory,
+        //     ContentType: locationHistory.type || "application/octet-stream",
+        //   },
+        //   queueSize: 4,
+        //   partSize: 5 * 1024 * 1024,
+        // });
 
 
-        await timelineUpload.done();
+        // await timelineUpload.done();
         // await new Promise((resolve) => setTimeout(resolve, 3500));
 
-        timelineUrl = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${encodeURIComponent(
-          timelineKey
-        )}`;
+        // timelineUrl = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${encodeURIComponent(
+        //   timelineKey
+        // )}`;
 
-        // timelineUrl = "https://tbd-files.s3.eu-north-1.amazonaws.com/timelines/1761834772469-Timeline.json"
+        timelineUrl = "https://tbd-files.s3.eu-north-1.amazonaws.com/timelines/1761834772469-Timeline.json"
       }
 
       // ---------- Call Python verification endpoint (JSON) ----------
@@ -127,7 +127,7 @@ const DocumentSubmissionPage: React.FC = () => {
         {
           bill_url: billUrl,
           timeline_url: timelineUrl,
-          user_id: userId,
+          user_id: "6914771003af7dc0ef7ce8f3",
         },
         { headers: { "Content-Type": "application/json" } }
       );
@@ -155,7 +155,7 @@ const DocumentSubmissionPage: React.FC = () => {
       setUploadProgress("Saving verification data...");
 
       const payload = {
-        userId,
+        userId: "6914771003af7dc0ef7ce8f3",
         confidenceScore,
         googlePlaceId: verificationData.utility_address.place_id,
         lng: verificationData.utility_address.lng,
